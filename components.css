@@ -1,0 +1,479 @@
+/* components.css */
+
+/* Premium Glassmorphism Cards */
+.card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-normal);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.card-glass {
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-glass);
+}
+
+/* Buttons */
+.btn {
+    padding: 0.65rem 1.25rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    border: 1px solid transparent;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.btn-primary {
+    background: var(--brand-primary);
+    color: white;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--brand-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+}
+
+.btn-outline {
+    background: transparent;
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-outline:hover:not(:disabled) {
+    background: var(--bg-primary);
+}
+
+.btn-sm {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+/* Sidebar Container (Responsive Drawer) */
+#sidebar-container {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border-color);
+    z-index: 50;
+    transition: transform var(--transition-normal);
+    flex-shrink: 0;
+    overflow-y: auto;
+}
+
+.sidebar {
+    padding: 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Mobile Sidebar Behavior */
+@media (max-width: 768px) {
+    #sidebar-container {
+        position: fixed;
+        left: 0;
+        top: 0;
+        transform: translateX(-100%); /* Hidden by default */
+        box-shadow: var(--shadow-md);
+    }
+    
+    #sidebar-container.open { transform: translateX(0); }
+}
+
+/* Sidebar Overlay */
+#mobile-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+    z-index: 40;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+#mobile-sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Navigation Items */
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    transition: var(--transition-fast);
+    margin-bottom: 0.25rem;
+}
+
+.nav-item:hover {
+    background-color: var(--bg-primary);
+    color: var(--brand-primary);
+}
+
+.nav-item.active {
+    background-color: rgba(37, 99, 235, 0.1);
+    color: var(--brand-primary);
+    font-weight: 600;
+}
+
+.nav-item i { width: 20px; height: 20px; transition: transform var(--transition-fast); }
+.nav-item:hover i { transform: scale(1.1); }
+
+/* Badges */
+.badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+
+/* Data Tables */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: var(--radius-sm);
+}
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 600px;
+}
+
+th {
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1rem !important;
+    border-bottom: 1px solid var(--border-color);
+}
+
+td {
+    padding: 1rem !important;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+tbody tr { transition: background-color var(--transition-fast); }
+tbody tr:hover { background-color: var(--bg-primary); }
+
+/* Command Palette Items */
+.cmd-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    color: var(--text-primary);
+}
+.cmd-item:hover {
+    background: var(--bg-primary);
+    transform: translateX(4px);
+}
+.cmd-item i { color: var(--text-secondary); }
+
+
+/* Add to bottom of components.css */
+
+/* Global Premium Dialog System */
+.app-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-normal);
+}
+
+.app-dialog-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.app-dialog {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: var(--shadow-glass);
+    transform: translateY(20px) scale(0.95);
+    transition: all var(--transition-normal);
+}
+
+.app-dialog-overlay.active .app-dialog {
+    transform: translateY(0) scale(1);
+}
+
+.app-dialog-header {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+}
+
+.app-dialog-message {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.app-dialog-input {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    display: none;
+}
+
+.app-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* --- ADVANCED DATA GRID UI --- */
+.data-grid-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox-cell {
+    width: 40px;
+    text-align: center;
+    vertical-align: middle !important;
+}
+
+.custom-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--brand-primary);
+}
+
+.selected-count {
+    font-size: 0.875rem;
+    color: var(--brand-primary);
+    font-weight: 600;
+    background: rgba(37, 99, 235, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+}
+
+/* Print Styles for PDF Export */
+@media print {
+    body * { visibility: hidden; }
+    .main-content, .main-content * { visibility: visible; }
+    .main-content { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
+    .data-grid-toolbar, .table-footer, .checkbox-cell, .btn { display: none !important; }
+    .card { box-shadow: none; border: none; }
+    table { border: 1px solid #000; }
+    th, td { border-bottom: 1px solid #ccc; color: #000; }
+}
+
+
+
+/* --- MOBILE RESPONSIVE CARD ANATOMY (Matches UI Mockup) --- */
+@media (max-width: 768px) {
+    .table-responsive {
+        border: none !important;
+        background: transparent !important;
+        overflow-x: hidden;
+        padding: 0 0.25rem;
+    }
+    .table-responsive table {
+        border: none;
+        width: 100%;
+        display: block;
+    }
+    .table-responsive thead {
+        display: none; /* Hide standard headers */
+    }
+    .table-responsive tbody {
+        display: block;
+        width: 100%;
+    }
+    
+    /* Transform the row into the main Card Container */
+    .table-responsive tr {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-areas:
+            "chk id actions"
+            "main main main"
+            "data1 data1 data1"
+            "data2 data2 data2";
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 16px; /* Rounded corners like mockup */
+        margin-bottom: 1rem;
+        padding: 0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        overflow: hidden;
+    }
+
+    /* Map Table Cells (td) to Card Anatomy Grid Areas */
+    .table-responsive td:nth-child(1) { grid-area: chk; }
+    .table-responsive td:nth-child(2) { grid-area: main; }
+    .table-responsive td:nth-child(3) { grid-area: id; }
+    .table-responsive td:nth-child(4) { grid-area: data1; }
+    .table-responsive td:nth-child(5) { grid-area: data2; }
+    .table-responsive td:nth-child(6) { grid-area: actions; }
+
+    /* General Cell Styling */
+    .table-responsive td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-color);
+        text-align: right !important;
+        font-size: 0.9rem;
+    }
+
+    /* --- A: CARD HEADER STYLING --- */
+    .table-responsive td:nth-child(1),
+    .table-responsive td:nth-child(3),
+    .table-responsive td:nth-child(6) {
+        border-bottom: none;
+        background: rgba(0,0,0,0.02); /* Very subtle header background */
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+    
+    /* B: Record ID */
+    .table-responsive td:nth-child(3) { 
+        justify-content: flex-start;
+        padding-left: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: monospace; /* Gives the ID a technical look */
+        letter-spacing: 0.5px;
+    }
+    
+    /* Checkbox Alignment */
+    .table-responsive td:nth-child(1) { 
+        padding-right: 12px;
+        display: flex !important; /* Ensure visible on mobile */
+    }
+    .custom-checkbox { width: 18px; height: 18px; border-radius: 4px; }
+
+    /* C: Actions (Icon-only styling) */
+    .table-responsive td:nth-child(6) { 
+        gap: 0.75rem;
+        padding-left: 0;
+    }
+    .table-responsive td:nth-child(6) .btn {
+        border: none; /* Removes outline for a cleaner look */
+        background: transparent;
+        padding: 4px;
+        color: var(--text-secondary);
+    }
+    .table-responsive td:nth-child(6) .btn:hover { color: var(--brand-primary); }
+
+    /* Hide labels inside the Card Header area */
+    .table-responsive td:nth-child(1)::before,
+    .table-responsive td:nth-child(3)::before,
+    .table-responsive td:nth-child(6)::before {
+        display: none;
+    }
+
+    /* --- G: CARD ROWS & F: ROW DIVIDERS --- */
+    .table-responsive td:nth-child(2) {
+        border-top: 1px solid var(--border-color); /* Divider below the header */
+    }
+    
+    .table-responsive td:nth-child(5) {
+        border-bottom: none; /* Remove border from the very last row */
+    }
+
+    /* D: Data Header (Labels on the left) */
+    .table-responsive td:nth-child(2)::before,
+    .table-responsive td:nth-child(4)::before,
+    .table-responsive td:nth-child(5)::before {
+        content: attr(data-label); /* Pulls text from the JS data-label attribute */
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        text-align: left;
+        flex-shrink: 0;
+        margin-right: 1rem;
+    }
+    
+    /* E: Data Formatting (Stack multi-line text to align cleanly) */
+    .table-responsive td > div {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+}

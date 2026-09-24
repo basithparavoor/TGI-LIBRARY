@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Inspector - TGI LIBRARY</title>
+    <link rel="stylesheet" href="variables.css">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="components.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script> <!-- Reusing HTML5 QRCode[cite: 17] -->
+</head>
+<body>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <div id="topbar-container"></div>
+            
+            <main class="main-content">
+                <div style="margin-bottom: 2rem;">
+                    <h1>Universal Inspector</h1>
+                    <p style="color: var(--text-secondary);">Scan any Shelf, Rack, or Book barcode to instantly view its contents and metadata.</p>
+                </div>
+
+                <div class="responsive-grid-2">
+                    <!-- Scanner Input -->
+                    <div class="card card-glass" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div id="inspector-reader" style="width: 100%; min-height: 250px; background: #000; border-radius: var(--radius-sm); overflow: hidden;"></div>
+                        <button class="btn btn-primary" id="btn-start-inspect"><i data-lucide="scan"></i> Activate Camera Scanner</button>
+                        
+                        <div style="display: flex; align-items: center; gap: 1rem; margin: 1rem 0;">
+                            <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);">OR</span>
+                            <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+                        </div>
+
+                        <div class="input-group" style="margin-bottom: 0;">
+                            <label>Manual Barcode Entry</label>
+                            <input type="text" id="manual-inspect-barcode" placeholder="Scan or type barcode and press Enter">
+                        </div>
+                    </div>
+
+                    <!-- Inspection Results Panel -->
+                    <div class="card card-glass" id="inspection-results" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 400px;">
+                        <i data-lucide="layers" style="width: 48px; height: 48px; color: var(--text-secondary); margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <h2 style="font-size: 1.125rem; color: var(--text-secondary);">Awaiting Scan</h2>
+                        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem; max-width: 250px;">Point the scanner at a barcode to fetch database records.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        let scanner = null;
+
+        document.getElementById('btn-start-inspect').addEventListener('click', () => {
+            if (!scanner) {
+                scanner = new Html5QrcodeScanner("inspector-reader", { fps: 10, qrbox: { width: 250, height: 100 } }, false);
+            }
+            scanner.render(processInspectScan, (err) => {});
+        });
+
+        document.getElementById('manual-inspect-barcode').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') processInspectScan(e.target.value.trim());
+        });
+
+        function processInspectScan(barcode) {
+            if (!barcode) return;
+            const resultsPanel = document.getElementById('inspection-results');
+            
+            // Stop scanner if running
+            if (scanner) { scanner.clear(); }
+            document.getElementById('manual-inspect-barcode').value = '';
+
+            // MOCK DATABASE RESOLUTION LOGIC based on Barcode Prefix
+            resultsPanel.style.justifyContent = 'flex-start';
+            resultsPanel.style.alignItems = 'stretch';
+            resultsPanel.style.textAlign = 'left';
+
+            if (barcode.startsWith('ATH-S')) {
+                // RENDER SHELF VIEW
+                resultsPanel.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                        <div>
+                            <div class="badge badge-warning" style="margin-bottom: 0.5rem;">Shelf Record</div>
+                            <h2 style="font-size: 1.5rem; font-weight: 700;">Science Fiction Section</h2>
+                            <p style="color: var(--text-secondary); font-family: monospace;">ID: ${barcode}</p>
+                        </div>
+                        <button class="btn btn-outline btn-sm"><i data-lucide="edit"></i> Edit</button>
+                    </div>
+                    <h3 style="font-size: 1rem; margin-bottom: 1rem;">Associated Racks</h3>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div style="padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); display: flex; justify-content: space-between;">
+                            <div><span style="font-weight: 600;">Rack 1: Cyberpunk</span> <span style="font-size: 0.8rem; color: var(--text-secondary);">(45 Books)</span></div>
+                            <button class="btn btn-sm btn-outline" onclick="processInspectScan('ATH-R-CYBER')">Inspect</button>
+                        </div>
+                        <div style="padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); display: flex; justify-content: space-between;">
+                            <div><span style="font-weight: 600;">Rack 2: Space Opera</span> <span style="font-size: 0.8rem; color: var(--text-secondary);">(32 Books)</span></div>
+                            <button class="btn btn-sm btn-outline" onclick="processInspectScan('ATH-R-SPACE')">Inspect</button>
+                        </div>
+                    </div>
+                `;
+            } else if (barcode.startsWith('ATH-R')) {
+                // RENDER RACK VIEW
+                resultsPanel.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                        <div>
+                            <div class="badge badge-success" style="margin-bottom: 0.5rem;">Rack Record</div>
+                            <h2 style="font-size: 1.5rem; font-weight: 700;">Cyberpunk</h2>
+                            <p style="color: var(--text-secondary); font-family: monospace;">Location: Shelf -> Science Fiction | ID: ${barcode}</p>
+                        </div>
+                    </div>
+                    <h3 style="font-size: 1rem; margin-bottom: 1rem;">Books on this Rack (Total: 45)</h3>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 300px; overflow-y: auto;">
+                        <div style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">Neuromancer - William Gibson</div>
+                        <div style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">Snow Crash - Neal Stephenson</div>
+                        <div style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">Altered Carbon - Richard K. Morgan</div>
+                    </div>
+                `;
+            } else {
+                // RENDER BOOK VIEW
+                resultsPanel.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                        <div>
+                            <div class="badge" style="background: rgba(37, 99, 235, 0.1); color: var(--brand-primary); margin-bottom: 0.5rem;">Book Copy Record</div>
+                            <h2 style="font-size: 1.5rem; font-weight: 700;">The Pragmatic Programmer</h2>
+                            <p style="color: var(--text-secondary); font-family: monospace;">Barcode: ${barcode}</p>
+                        </div>
+                        <span class="badge badge-success" style="font-size: 1rem; padding: 0.5rem 1rem;">AVAILABLE</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; background: var(--bg-primary); padding: 1rem; border-radius: var(--radius-sm);">
+                        <div><p style="font-size: 0.75rem; color: var(--text-secondary);">Author</p><p style="font-weight: 500;">David Thomas</p></div>
+                        <div><p style="font-size: 0.75rem; color: var(--text-secondary);">Publisher</p><p style="font-weight: 500;">Addison-Wesley</p></div>
+                        <div><p style="font-size: 0.75rem; color: var(--text-secondary);">Price</p><p style="font-weight: 500;">₹3,450.00</p></div>
+                        <div><p style="font-size: 0.75rem; color: var(--text-secondary);">Location</p><p style="font-weight: 500;">Shelf: Tech / Rack: SE</p></div>
+                    </div>
+                `;
+            }
+            lucide.createIcons();
+        }
+    </script>
+    <script type="module" src="ui.js"></script>
+</body>
+</html>

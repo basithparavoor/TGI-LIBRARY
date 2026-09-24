@@ -1,0 +1,103 @@
+/* main.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden; /* App shell prevents full body scroll */
+}
+
+/* App Shell Layout */
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    position: relative;
+}
+
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2rem;
+    scroll-behavior: smooth;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Base Typography */
+h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.025em; }
+h2 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.015em; }
+p { line-height: 1.6; }
+
+/* Dashboard Grids */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.responsive-grid-2 {
+    display: grid; 
+    grid-template-columns: 2fr 1fr; 
+    gap: 1.5rem; 
+    margin-bottom: 2rem;
+}
+
+/* Inputs & Forms */
+.input-group { margin-bottom: 1.25rem; }
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+input, select {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    outline: none;
+    transition: var(--transition-fast);
+    font-family: inherit;
+    font-size: 0.875rem;
+}
+input:focus, select:focus { 
+    border-color: var(--brand-primary); 
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); 
+}
+
+/* Print Styles */
+@media print {
+    body * { visibility: hidden; }
+    #printable-card-container, #printable-card-container * { visibility: visible; }
+    #printable-card-container {
+        position: absolute; left: 0; top: 0; display: flex !important; justify-content: center; align-items: center; width: 100%;
+    }
+    .library-card {
+        border: 2px solid #000 !important; width: 85.6mm; height: 53.98mm; padding: 10px; box-shadow: none !important; background: #fff !important;
+    }
+}
+
+/* Responsive Overrides */
+@media (max-width: 1024px) {
+    .responsive-grid-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .main-content { padding: 1.25rem; }
+    h1 { font-size: 1.5rem; }
+}

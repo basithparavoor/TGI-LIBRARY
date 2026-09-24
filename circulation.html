@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circulation - TGI LIBRARY</title>
+    <link rel="stylesheet" href="variables.css">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="components.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <div id="topbar-container"></div>
+            
+            <main class="main-content">
+                <div style="margin-bottom: 2rem;">
+                    <h1>Circulation Desk</h1>
+                    <p style="color: var(--text-secondary);">Rapidly scan barcodes to issue or return library materials.</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
+                    
+                    <!-- ISSUE BOOK PANEL -->
+                    <div class="card card-glass" style="border-top: 4px solid var(--brand-primary);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h2 style="font-size: 1.25rem;">Issue Book</h2>
+                            <i data-lucide="book-up" style="color: var(--brand-primary);"></i>
+                        </div>
+                        <form id="form-issue">
+                            <div class="input-group">
+                                <label style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    Student ID Barcode
+                                    <button type="button" onclick="openCameraScanner('issue-student-id')" style="background: none; border: none; color: var(--brand-primary); cursor: pointer; display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem;"><i data-lucide="camera" style="width: 14px; height: 14px;"></i> Scan</button>
+                                </label>
+                                <input type="text" id="issue-student-id" required autocomplete="off" placeholder="Scan or type Student ID...">
+                            </div>
+                            <div class="input-group">
+                                <label style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    Book Accession Barcode
+                                    <button type="button" onclick="openCameraScanner('issue-book-barcode')" style="background: none; border: none; color: var(--brand-primary); cursor: pointer; display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem;"><i data-lucide="camera" style="width: 14px; height: 14px;"></i> Scan</button>
+                                </label>
+                                <input type="text" id="issue-book-barcode" required autocomplete="off" placeholder="Scan or type Book Barcode...">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;"><i data-lucide="check-circle" style="width: 18px;"></i> Process Issue</button>
+                        </form>
+                        <div id="issue-status" style="margin-top: 1.25rem; font-weight: 500; font-size: 0.875rem; text-align: center;"></div>
+                    </div>
+
+                    <!-- RETURN BOOK PANEL -->
+                    <div class="card card-glass" style="border-top: 4px solid var(--success);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h2 style="font-size: 1.25rem;">Return Book</h2>
+                            <i data-lucide="book-down" style="color: var(--success);"></i>
+                        </div>
+                        <form id="form-return">
+                            <div class="input-group" style="margin-bottom: 2rem;">
+                                <label style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    Book Accession Barcode
+                                    <button type="button" onclick="openCameraScanner('return-book-barcode')" style="background: none; border: none; color: var(--brand-primary); cursor: pointer; display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem;"><i data-lucide="camera" style="width: 14px; height: 14px;"></i> Scan</button>
+                                </label>
+                                <input type="text" id="return-book-barcode" required autocomplete="off" placeholder="Scan or type Book Barcode...">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%; background: var(--success); box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);"><i data-lucide="corner-down-left" style="width: 18px;"></i> Process Return</button>
+                        </form>
+                        <div id="return-status" style="margin-top: 1.25rem; font-weight: 500; font-size: 0.875rem; text-align: center;"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Mobile Scanner Modal Overlay -->
+    <div id="scanner-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card card-glass" style="width: 100%; max-width: 500px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0;">Scan Barcode</h3>
+                <button onclick="closeCameraScanner()" style="background: transparent; border: none; cursor: pointer; color: var(--text-secondary);"><i data-lucide="x"></i></button>
+            </div>
+            
+            <div id="reader" style="width: 100%; min-height: 300px; display: none; overflow: hidden; border-radius: var(--radius-sm);"></div>
+            <button onclick="closeCameraScanner()" class="btn btn-outline" style="width: 100%; margin-top: 1.5rem;">Cancel Scan</button>
+        </div>
+    </div>
+
+    <script>lucide.createIcons();</script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="ui.js"></script>
+    <script type="module" src="scanner.js"></script>
+    <script type="module" src="circulation_ui.js"></script>
+    
+    <script>
+        function openCameraScanner(targetInputId) {
+            document.getElementById('scanner-modal').style.display = 'flex';
+            if (window.startScanner) window.startScanner(targetInputId);
+        }
+        function closeCameraScanner() {
+            document.getElementById('scanner-modal').style.display = 'none';
+            if (window.stopScanner) window.stopScanner();
+        }
+
+        const readerObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                const scannerModal = document.getElementById('scanner-modal');
+                if (mutation.target.style.display === 'none' && scannerModal.style.display === 'flex') {
+                    scannerModal.style.display = 'none';
+                }
+            });
+        });
+        
+        const readerEl = document.getElementById('reader');
+        if (readerEl) readerObserver.observe(readerEl, { attributes: true, attributeFilter: ['style'] });
+    </script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Printer - TGI LIBRARY</title>
+    <link rel="stylesheet" href="variables.css">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="components.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        /* Print Specific Overrides */
+        @media print {
+            body * { visibility: hidden; }
+            #print-canvas, #print-canvas * { visibility: visible; }
+            #print-canvas { position: absolute; left: 0; top: 0; width: 100%; display: grid; gap: var(--print-gap, 10mm); padding: var(--print-margin, 10mm); }
+            .barcode-label { page-break-inside: avoid; border: 1px solid #ccc; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; color: black; }
+        }
+        .barcode-label canvas { max-width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <div id="topbar-container"></div>
+            
+            <main class="main-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <h1>Barcode Generator & Printer</h1>
+                        <p style="color: var(--text-secondary);">Configure and print labels for Books, Shelves, and Racks.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="window.print()"><i data-lucide="printer"></i> Print PDF Labels</button>
+                </div>
+
+                <div class="responsive-grid-2">
+                    <!-- Configuration Panel -->
+                    <div class="card card-glass" style="height: fit-content;">
+                        <h2 style="font-size: 1.125rem; margin-bottom: 1.5rem;">Label Configuration</h2>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="input-group">
+                                <label>Label Width (mm)</label>
+                                <input type="number" id="label-width" value="50">
+                            </div>
+                            <div class="input-group">
+                                <label>Label Height (mm)</label>
+                                <input type="number" id="label-height" value="25">
+                            </div>
+                            <div class="input-group">
+                                <label>Labels Per Row</label>
+                                <input type="number" id="labels-per-row" value="3">
+                            </div>
+                            <div class="input-group">
+                                <label>Include Institute Name</label>
+                                <select id="include-header">
+                                    <option value="yes">Yes</option>
+                                    <option value="no">No</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <h3 style="font-size: 0.875rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 1rem;">Select Items to Print</h3>
+                        <div class="input-group" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <select id="entity-type" style="width: 150px;">
+                                <option value="books">Books</option>
+                                <option value="shelves">Shelves</option>
+                                <option value="racks">Racks</option>
+                            </select>
+                            <input type="text" id="search-entities" placeholder="Search by name or ID..." style="flex: 1;">
+                            <button class="btn btn-outline" id="btn-add-to-queue">Add to Queue</button>
+                        </div>
+                    </div>
+
+                    <!-- Print Queue & Preview -->
+                    <div class="card card-glass" style="display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                            <h2 style="font-size: 1.125rem;">Print Preview Queue</h2>
+                            <button class="btn btn-sm btn-outline" style="color: var(--danger);" onclick="clearQueue()">Clear Queue</button>
+                        </div>
+                        
+                        <div id="print-canvas" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; background: var(--bg-primary); padding: 1rem; border-radius: var(--radius-sm); min-height: 400px; align-content: flex-start; overflow-y: auto;">
+                            <!-- Labels generated here -->
+                            <div style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 2rem;">Queue is empty.</div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const printCanvas = document.getElementById('print-canvas');
+        
+        // Example mock function to add to queue (in a real app, this searches the DB)
+        document.getElementById('btn-add-to-queue').addEventListener('click', () => {
+            const type = document.getElementById('entity-type').value;
+            const search = document.getElementById('search-entities').value || `TEMP-${Math.floor(Math.random()*1000)}`;
+            const width = document.getElementById('label-width').value;
+            const height = document.getElementById('label-height').value;
+            const columns = document.getElementById('labels-per-row').value;
+            
+            if(printCanvas.innerHTML.includes('Queue is empty')) printCanvas.innerHTML = '';
+            
+            // Set grid columns for print media dynamically
+            document.documentElement.style.setProperty('--print-grid-cols', `repeat(${columns}, 1fr)`);
+            printCanvas.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+
+            const labelId = `barcode-${Date.now()}`;
+            const headerHtml = document.getElementById('include-header').value === 'yes' ? `<div style="font-size: 8px; font-weight: bold; margin-bottom: 2px;">TGI LIBRARY</div>` : '';
+            
+            const labelHtml = `
+                <div class="barcode-label" style="width: ${width}mm; height: ${height}mm; padding: 2mm; text-align: center;">
+                    ${headerHtml}
+                    <div style="font-size: 8px; margin-bottom: 2px; text-transform: uppercase;">${type.slice(0,-1)}</div>
+                    <canvas id="${labelId}"></canvas>
+                </div>
+            `;
+            
+            printCanvas.insertAdjacentHTML('beforeend', labelHtml);
+            
+            // Generate Barcode
+            JsBarcode(`#${labelId}`, `ATH-${type.substring(0,1).toUpperCase()}-${search}`, {
+                format: "CODE128", width: 1.5, height: 30, displayValue: true, fontSize: 10, margin: 2
+            });
+        });
+
+        function clearQueue() {
+            printCanvas.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 2rem;">Queue is empty.</div>';
+        }
+    </script>
+    <script type="module" src="ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - TGI LIBRARY</title>
+    <link rel="stylesheet" href="variables.css">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="components.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar injected via UI.js -->
+        <div id="sidebar-container"></div>
+
+        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <!-- Topbar injected via UI.js -->
+            <div id="topbar-container"></div>
+            
+            <main class="main-content page-padding">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <h1>Library Reports</h1>
+                        <p style="color: var(--text-secondary);">Generate, view, and export library analytics.</p>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-outline" id="btn-print" onclick="window.print()"><i data-lucide="printer" style="width: 18px;"></i> Print</button>
+                        <button class="btn btn-primary" id="btn-export-csv"><i data-lucide="download" style="width: 18px;"></i> Export CSV</button>
+                    </div>
+                </div>
+
+                <!-- Report Controls -->
+                <div class="card" style="margin-bottom: 2rem; display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="input-group" style="margin-bottom: 0; min-width: 250px;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500;">Report Type</label>
+                        <select id="report-type" style="padding: 0.75rem; width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius); outline: none;">
+                            <option value="overdue">Overdue Books</option>
+                            <option value="active_loans">All Active Loans</option>
+                            <option value="fines">Pending Fines</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="btn-generate" style="height: fit-content; padding: 0.75rem 1.5rem;"><i data-lucide="bar-chart-2" style="width: 18px;"></i> Generate Report</button>
+                </div>
+
+                <!-- Report Data Table -->
+                <div class="card" style="padding: 0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;" id="report-table">
+                        <thead style="background: var(--bg-primary);" id="report-thead">
+                            <!-- Headers injected via JS -->
+                            <tr>
+                                <th>Report Preview</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-tbody">
+                            <tr><td colspan="100%" style="padding: 3rem; text-align: center; color: var(--text-secondary);">Select a report type and click Generate.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>lucide.createIcons();</script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="ui.js"></script>
+    <script type="module" src="reports.js"></script>
+</body>
+</html>

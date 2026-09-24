@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Audit - TGI LIBRARY</title>
+    <link rel="stylesheet" href="variables.css">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="components.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <div id="topbar-container"></div>
+            
+            <main class="main-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h1>Bulk Inventory Audit</h1>
+                        <p style="color: var(--text-secondary);">Continuously scan shelves to reconcile physical stock with the database.</p>
+                    </div>
+                    <button class="btn btn-outline" id="btn-reconcile"><i data-lucide="file-check"></i> Generate Discrepancy Report</button>
+                </div>
+
+                <div class="responsive-grid-2">
+                    <!-- Scanner Panel -->
+                    <div class="card card-glass" style="display: flex; flex-direction: column;">
+                        <h2 style="margin-bottom: 1rem; font-size: 1.125rem;">Active Scanner</h2>
+                        <div id="audit-reader" style="width: 100%; min-height: 300px; border-radius: var(--radius-sm); overflow: hidden; background: #000; margin-bottom: 1rem;"></div>
+                        <div style="display: flex; gap: 1rem;">
+                            <button class="btn btn-primary" id="btn-start-audit" style="flex: 1;"><i data-lucide="play"></i> Start Scanning</button>
+                            <button class="btn btn-outline" id="btn-stop-audit" style="flex: 1;" disabled><i data-lucide="square"></i> Pause</button>
+                        </div>
+                        
+                        <!-- Manual Fallback -->
+                        <div class="input-group" style="margin-top: 1.5rem; margin-bottom: 0;">
+                            <label>Manual Barcode Entry</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" id="manual-audit-barcode" placeholder="Type barcode and press Enter">
+                                <button class="btn btn-outline" id="btn-add-manual">Add</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scan Results Panel -->
+                    <div class="card card-glass" style="display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2 style="font-size: 1.125rem;">Session Progress</h2>
+                            <span class="badge badge-success" id="scan-count">0 Scanned</span>
+                        </div>
+                        
+                        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem;">
+                            <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Expected Available Books: <span id="expected-count" style="font-weight: 600; color: var(--text-primary);">Loading...</span></p>
+                            <div style="width: 100%; background: var(--border-color); height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div id="audit-progress-bar" style="width: 0%; height: 100%; background: var(--brand-primary); transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
+
+                        <h3 style="font-size: 0.875rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.5rem;">Recent Scans</h3>
+                        <div id="recent-scans-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
+                            <!-- Populated by JS -->
+                            <div style="text-align: center; color: var(--text-secondary); font-size: 0.875rem; padding: 2rem 0;">Start scanning to see items here.</div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>lucide.createIcons();</script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="ui.js"></script>
+    <script type="module" src="inventory.js"></script>
+</body>
+</html>

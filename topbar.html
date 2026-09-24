@@ -1,0 +1,58 @@
+<header style="display: flex; justify-content: space-between; align-items: center; padding: 0 1.5rem; background: var(--bg-surface); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 10; height: 72px; transition: background-color var(--transition-normal), border-color var(--transition-normal);">
+    
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <!-- Mobile Hamburger Menu (Hidden on desktop via JS/CSS logic) -->
+        <button id="mobile-menu-btn" style="display: none; background: transparent; border: none; color: var(--text-primary); cursor: pointer; padding: 0.25rem;">
+            <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
+        </button>
+
+        <!-- Branding / Page Title -->
+        <div id="topbar-title" style="display: flex; align-items: center; gap: 0.75rem;">
+            <h2 style="font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin: 0;">TGI LIBRARY</h2>
+            <span class="badge" style="background: rgba(37, 99, 235, 0.1); color: var(--brand-primary); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em;">PRO</span>
+        </div>
+    </div>
+
+    <div class="header-actions" style="display: flex; align-items: center; gap: 1rem;">
+        <!-- Search Shortcut Hint -->
+        <button class="btn btn-outline" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.75rem; border-color: var(--border-color); background: var(--bg-primary); border-radius: 999px;" onclick="toggleCommandPalette()">
+            <i data-lucide="search" style="width: 16px; height: 16px;"></i> 
+            <span style="font-size: 0.875rem; display: none; @media(min-width: 640px){ display: inline; }">Search...</span> 
+            <kbd style="background: var(--bg-surface); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.75rem; border: 1px solid var(--border-color);">Ctrl K</kbd>
+        </button>
+
+        <div style="width: 1px; height: 24px; background: var(--border-color);"></div>
+
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" style="background: transparent; padding: 0.5rem; color: var(--text-secondary); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s;" title="Toggle Theme">
+            <i data-lucide="moon" style="width: 20px; height: 20px;"></i>
+        </button>
+
+        <!-- User Profile -->
+        <div class="user-profile" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.35rem 0.5rem; border-radius: var(--radius-sm); transition: background 0.2s;">
+            <div style="text-align: right; display: none; @media(min-width: 640px){ display: block; }">
+                <p id="topbar-user-name" style="font-size: 0.875rem; font-weight: 600; margin: 0; color: var(--text-primary);">Admin</p>
+                <p id="topbar-user-role" style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; font-weight: 500; text-transform: uppercase;">Loading...</p>
+            </div>
+            <div id="topbar-user-avatar" style="width: 36px; height: 36px; border-radius: 50%; background: var(--brand-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem; box-shadow: 0 2px 4px rgba(37,99,235,0.2);">
+                A
+            </div>
+        </div>
+
+        <div style="width: 1px; height: 24px; background: var(--border-color);"></div>
+
+        <!-- Logout Button -->
+        <button id="logout-btn" style="color: var(--danger); background: transparent; padding: 0.5rem; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;" title="Logout">
+            <i data-lucide="log-out" style="width: 20px; height: 20px;"></i>
+        </button>
+    </div>
+    
+    <!-- Inline style to handle mobile display overrides without extra CSS files -->
+    <style>
+        @media (max-width: 768px) {
+            #mobile-menu-btn { display: block !important; }
+            .user-profile div:first-child { display: none !important; }
+            #topbar-title h2 { display: none !important; }
+        }
+    </style>
+</header>
