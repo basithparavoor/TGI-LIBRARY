@@ -7,13 +7,14 @@ const logoutBtn = document.getElementById('logout-btn');
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('email').value;
+        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const btn = document.getElementById('login-btn');
         const errorMsg = document.getElementById('error-message');
 
-        btn.innerText = 'Signing in...';
+        btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width: 18px; height: 18px;"></i> Signing in...';
         btn.disabled = true;
+        if (window.lucide) lucide.createIcons();
 
         const { data, error } = await supabase.auth.signInWithPassword({
             email: email,
@@ -23,10 +24,10 @@ if (loginForm) {
         if (error) {
             errorMsg.innerText = error.message;
             errorMsg.style.display = 'block';
-            btn.innerText = 'Sign In';
+            btn.innerHTML = '<i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Sign In';
             btn.disabled = false;
+            if (window.lucide) lucide.createIcons();
         } else {
-            // Redirect to dashboard on success
             window.location.href = 'index.html';
         }
     });
@@ -42,48 +43,51 @@ if (logoutBtn) {
 
 // --- ROUTE PROTECTION & ROLE FETCHING ---
 export async function checkSession() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const isPublicPage = window.location.pathname.includes('login.html') || window.location.pathname.includes('student_portal.html');
     
-    // If no session and not on login page, kick to login
-    if (!session && !window.location.pathname.includes('login.html')) {
-        window.location.href = 'login.html';
-        return null;
-    }
-    
-    if (session) {
-        // 1. Establish bulletproof fallback data
-        let userName = session.user.email.split('@')[0];
-        let roleName = 'SUPER ADMIN'; 
+    try {
+        const { data: { session } } = await supabase.auth.getSession();
         
-        try {
-            // 2. Safely attempt to fetch just the name (bypassing the 406 role_id error)
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('name')
-                .eq('id', session.user.id)
-                .maybeSingle(); // maybeSingle prevents errors if the row doesn't exist
-                
-            if (profile && profile.name) {
-                userName = profile.name;
-            }
-        } catch (err) {
-            // Silently ignore DB schema mismatch errors so the app doesn't crash
-            console.warn("Using fallback user profile.");
+        // If no session and not on a public page, redirect to login
+        if (!session && !isPublicPage) {
+            window.location.href = 'login.html';
+            return null;
         }
-            
-        // 3. Store user info globally for topbar UI updates
-        window.currentUser = {
-            id: session.user.id,
-            email: session.user.email,
-            name: userName,
-            role: roleName
-        };
         
-        return window.currentUser;
+        if (session) {
+            let userName = session.user.email ? session.user.email.split('@')[0] : 'Admin';
+            let roleName = 'SUPER ADMIN'; 
+            
+            try {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('name')
+                    .eq('id', session.user.id)
+                    .maybeSingle();
+                    
+                if (profile && profile.name) {
+                    userName = profile.name;
+                }
+            } catch (err) {
+                console.warn("Using fallback user profile.");
+            }
+                
+            window.currentUser = {
+                id: session.user.id,
+                email: session.user.email,
+                name: userName,
+                role: roleName
+            };
+            
+            return window.currentUser;
+        }
+    } catch (e) {
+        console.error("Session check error:", e);
     }
 }
 
 // Initialize session check if we are on a protected page
-if (!window.location.pathname.includes('login.html')) {
+const isPublicPage = window.location.pathname.includes('login.html') || window.location.pathname.includes('student_portal.html');
+if (!isPublicPage) {
     checkSession();
 }

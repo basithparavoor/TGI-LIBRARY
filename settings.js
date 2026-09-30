@@ -14,7 +14,7 @@ tabButtons.forEach(button => {
         button.classList.add('active');
         const targetId = button.getAttribute('data-target');
         const targetPanel = document.getElementById(targetId);
-        if(targetPanel) targetPanel.style.display = 'block';
+        if (targetPanel) targetPanel.style.display = 'block';
     });
 });
 
@@ -23,21 +23,25 @@ async function loadSettings() {
     try {
         const { data, error } = await supabase.from('library_settings').select('*');
         if (error) return;
-        data.forEach(setting => {
-            if (setting.setting_key === 'loan_days') document.getElementById('setting-loan-days').value = setting.setting_value;
-            if (setting.setting_key === 'fine_amount') document.getElementById('setting-fine-amount').value = setting.setting_value;
-            if (setting.setting_key === 'max_books') document.getElementById('setting-max-books').value = setting.setting_value;
-            if (setting.setting_key === 'max_renewals') document.getElementById('setting-max-renewals').value = setting.setting_value;
-        });
-    } catch (err) { console.error(err); }
+        if (data) {
+            data.forEach(setting => {
+                if (setting.setting_key === 'loan_days') document.getElementById('setting-loan-days').value = setting.setting_value;
+                if (setting.setting_key === 'fine_amount') document.getElementById('setting-fine-amount').value = setting.setting_value;
+                if (setting.setting_key === 'max_books') document.getElementById('setting-max-books').value = setting.setting_value;
+                if (setting.setting_key === 'max_renewals') document.getElementById('setting-max-renewals').value = setting.setting_value;
+            });
+        }
+    } catch (err) {
+        console.error("Error loading settings:", err);
+    }
 }
 
 settingsForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const originalText = btnSave.innerHTML;
-    btnSave.innerHTML = "Saving...";
+    btnSave.innerText = "Saving...";
     btnSave.disabled = true;
-    
+
     const updates = [
         { setting_key: 'loan_days', setting_value: document.getElementById('setting-loan-days').value },
         { setting_key: 'fine_amount', setting_value: document.getElementById('setting-fine-amount').value },
@@ -47,9 +51,9 @@ settingsForm?.addEventListener('submit', async (e) => {
 
     try {
         await supabase.from('library_settings').upsert(updates, { onConflict: 'setting_key' });
-        if (window.app) window.app.alert("Library rules updated.", "Saved");
+        window.app.toast("Circulation rules saved successfully.", "success", "Settings Saved");
     } catch (err) {
-        if (window.app) window.app.alert("Error saving settings.", "Error");
+        window.app.toast("Error saving settings.", "error", "Save Failed");
     } finally {
         btnSave.innerHTML = originalText;
         btnSave.disabled = false;
@@ -58,102 +62,145 @@ settingsForm?.addEventListener('submit', async (e) => {
 
 // --- HIERARCHICAL MASTER DATA ---
 async function loadHierarchicalData() {
-    const { data: depts, error: deptErr } = await supabase.from('departments').select('id, name, classes(id, name)').order('name');
     const acaTree = document.getElementById('tree-academic');
-    
-    if (!deptErr && acaTree) {
-        acaTree.innerHTML = depts.length ? depts.map(dept => `
-            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--bg-primary); border-bottom: 1px solid var(--border-color);">
-                    <span style="font-weight: 600;">${dept.name}</span>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-outline btn-sm" onclick="addChildEntity('Class', 'classes', 'department_id', '${dept.id}')"><i data-lucide="plus" style="width: 14px;"></i> Class</button>
-                        <button class="btn btn-outline btn-sm" onclick="editEntity('departments', '${dept.id}', '${dept.name}')"><i data-lucide="edit" style="width: 14px;"></i></button>
-                        <button class="btn btn-sm" style="color: var(--danger); background: transparent; border: none;" onclick="deleteEntity('departments', '${dept.id}', '${dept.name}')"><i data-lucide="trash-2" style="width: 16px;"></i></button>
-                    </div>
-                </div>
-                <div style="padding: 0.5rem 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
-                    ${dept.classes.length ? dept.classes.map(cls => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; font-size: 0.875rem;">
-                            <span style="display: flex; align-items: center;"><i data-lucide="corner-down-right" style="width: 14px; color: var(--text-secondary); margin-right: 0.5rem;"></i>${cls.name}</span>
-                            <div style="display: flex; gap: 0.25rem;">
-                                <button class="btn btn-sm" style="color: var(--text-secondary); background: transparent; border: none; padding: 0;" onclick="editEntity('classes', '${cls.id}', '${cls.name}')"><i data-lucide="edit" style="width: 14px;"></i></button>
-                                <button class="btn btn-sm" style="color: var(--danger); background: transparent; border: none; padding: 0;" onclick="deleteEntity('classes', '${cls.id}', '${cls.name}')"><i data-lucide="x" style="width: 14px;"></i></button>
-                            </div>
-                        </div>
-                    `).join('') : '<span style="font-size: 0.75rem; color: var(--text-secondary);">No classes assigned.</span>'}
-                </div>
-            </div>
-        `).join('') : '<div style="padding: 1rem; text-align: center; color: var(--text-secondary);">No departments found.</div>';
-    }
-
-    const { data: shelves, error: shelfErr } = await supabase.from('shelves').select('id, name, racks(id, name)').order('name');
     const locTree = document.getElementById('tree-locations');
-    
-    if (!shelfErr && locTree) {
-        locTree.innerHTML = shelves.length ? shelves.map(shelf => `
-            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--bg-primary); border-bottom: 1px solid var(--border-color);">
-                    <span style="font-weight: 600;">${shelf.name}</span>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-outline btn-sm" onclick="addChildEntity('Rack', 'racks', 'shelf_id', '${shelf.id}')"><i data-lucide="plus" style="width: 14px;"></i> Rack</button>
-                        <button class="btn btn-outline btn-sm" onclick="editEntity('shelves', '${shelf.id}', '${shelf.name}')"><i data-lucide="edit" style="width: 14px;"></i></button>
-                        <button class="btn btn-sm" style="color: var(--danger); background: transparent; border: none;" onclick="deleteEntity('shelves', '${shelf.id}', '${shelf.name}')"><i data-lucide="trash-2" style="width: 16px;"></i></button>
-                    </div>
-                </div>
-                <div style="padding: 0.5rem 1rem; display: flex; flex-direction: column; gap: 0.25rem;">
-                    ${shelf.racks.length ? shelf.racks.map(rack => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; font-size: 0.875rem;">
-                            <span style="display: flex; align-items: center;"><i data-lucide="corner-down-right" style="width: 14px; color: var(--text-secondary); margin-right: 0.5rem;"></i>${rack.name}</span>
-                            <div style="display: flex; gap: 0.25rem;">
-                                <button class="btn btn-sm" style="color: var(--text-secondary); background: transparent; border: none; padding: 0;" onclick="editEntity('racks', '${rack.id}', '${rack.name}')"><i data-lucide="edit" style="width: 14px;"></i></button>
-                                <button class="btn btn-sm" style="color: var(--danger); background: transparent; border: none; padding: 0;" onclick="deleteEntity('racks', '${rack.id}', '${rack.name}')"><i data-lucide="x" style="width: 14px;"></i></button>
+
+    try {
+        const { data: depts, error: deptErr } = await supabase
+            .from('departments')
+            .select('id, name, classes(id, name)')
+            .order('name');
+
+        if (!deptErr && acaTree) {
+            if (!depts || depts.length === 0) {
+                acaTree.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">No departments added yet.</div>`;
+            } else {
+                acaTree.innerHTML = depts.map(dept => `
+                    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--bg-muted); border-bottom: 1px solid var(--border-color);">
+                            <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">${dept.name}</span>
+                            <div style="display: flex; gap: 0.35rem;">
+                                <button class="btn btn-outline btn-sm" onclick="window.addChildEntity('Class', 'classes', 'department_id', '${dept.id}')" title="Add Class" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+                                    <i data-lucide="plus" style="width: 12px;"></i> Class
+                                </button>
+                                <button class="btn btn-ghost btn-sm" onclick="window.editEntity('departments', '${dept.id}', '${dept.name.replace(/'/g, "\\'")}')" title="Edit" style="padding: 0.2rem 0.4rem;">
+                                    <i data-lucide="edit-3" style="width: 14px;"></i>
+                                </button>
+                                <button class="btn btn-ghost btn-sm" style="color: var(--danger); padding: 0.2rem 0.4rem;" onclick="window.deleteEntity('departments', '${dept.id}', '${dept.name.replace(/'/g, "\\'")}')" title="Delete">
+                                    <i data-lucide="trash-2" style="width: 14px;"></i>
+                                </button>
                             </div>
                         </div>
-                    `).join('') : '<span style="font-size: 0.75rem; color: var(--text-secondary);">No racks assigned.</span>'}
-                </div>
-            </div>
-        `).join('') : '<div style="padding: 1rem; text-align: center; color: var(--text-secondary);">No shelves found.</div>';
+                        <div style="padding: 0.5rem 1rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                            ${dept.classes && dept.classes.length ? dept.classes.map(cls => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; font-size: 0.85rem;">
+                                    <span style="display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
+                                        <i data-lucide="corner-down-right" style="width: 14px; color: var(--brand-primary);"></i> ${cls.name}
+                                    </span>
+                                    <div style="display: flex; gap: 0.2rem;">
+                                        <button class="btn btn-ghost btn-sm" style="padding: 0.15rem 0.35rem; color: var(--text-muted);" onclick="window.editEntity('classes', '${cls.id}', '${cls.name.replace(/'/g, "\\'")}')">
+                                            <i data-lucide="edit" style="width: 12px;"></i>
+                                        </button>
+                                        <button class="btn btn-ghost btn-sm" style="padding: 0.15rem 0.35rem; color: var(--danger);" onclick="window.deleteEntity('classes', '${cls.id}', '${cls.name.replace(/'/g, "\\'")}')">
+                                            <i data-lucide="x" style="width: 12px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('') : '<span style="font-size: 0.75rem; color: var(--text-muted);">No classes assigned yet.</span>'}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        const { data: shelves, error: shelfErr } = await supabase
+            .from('shelves')
+            .select('id, name, racks(id, name)')
+            .order('name');
+
+        if (!shelfErr && locTree) {
+            if (!shelves || shelves.length === 0) {
+                locTree.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">No shelves created yet.</div>`;
+            } else {
+                locTree.innerHTML = shelves.map(shelf => `
+                    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--bg-muted); border-bottom: 1px solid var(--border-color);">
+                            <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">${shelf.name}</span>
+                            <div style="display: flex; gap: 0.35rem;">
+                                <button class="btn btn-outline btn-sm" onclick="window.addChildEntity('Rack', 'racks', 'shelf_id', '${shelf.id}')" title="Add Rack" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+                                    <i data-lucide="plus" style="width: 12px;"></i> Rack
+                                </button>
+                                <button class="btn btn-ghost btn-sm" onclick="window.editEntity('shelves', '${shelf.id}', '${shelf.name.replace(/'/g, "\\'")}')" title="Edit" style="padding: 0.2rem 0.4rem;">
+                                    <i data-lucide="edit-3" style="width: 14px;"></i>
+                                </button>
+                                <button class="btn btn-ghost btn-sm" style="color: var(--danger); padding: 0.2rem 0.4rem;" onclick="window.deleteEntity('shelves', '${shelf.id}', '${shelf.name.replace(/'/g, "\\'")}')" title="Delete">
+                                    <i data-lucide="trash-2" style="width: 14px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div style="padding: 0.5rem 1rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                            ${shelf.racks && shelf.racks.length ? shelf.racks.map(rack => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; font-size: 0.85rem;">
+                                    <span style="display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
+                                        <i data-lucide="corner-down-right" style="width: 14px; color: var(--brand-primary);"></i> ${rack.name}
+                                    </span>
+                                    <div style="display: flex; gap: 0.2rem;">
+                                        <button class="btn btn-ghost btn-sm" style="padding: 0.15rem 0.35rem; color: var(--text-muted);" onclick="window.editEntity('racks', '${rack.id}', '${rack.name.replace(/'/g, "\\'")}')">
+                                            <i data-lucide="edit" style="width: 12px;"></i>
+                                        </button>
+                                        <button class="btn btn-ghost btn-sm" style="padding: 0.15rem 0.35rem; color: var(--danger);" onclick="window.deleteEntity('racks', '${rack.id}', '${rack.name.replace(/'/g, "\\'")}')">
+                                            <i data-lucide="x" style="width: 12px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('') : '<span style="font-size: 0.75rem; color: var(--text-muted);">No racks assigned yet.</span>'}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        if (window.lucide) lucide.createIcons();
+    } catch (e) {
+        console.error("Master data hierarchy load error:", e);
     }
-    if (window.lucide) lucide.createIcons();
 }
 
 window.addParentEntity = function(label, table) {
-    if (!window.app) return;
     window.app.prompt(`Enter name for new ${label}:`, `Add ${label}`, async (val) => {
         if (val && val.trim()) {
             await supabase.from(table).insert([{ name: val.trim() }]);
+            window.app.toast(`Added ${label} "${val.trim()}".`, "success", "Entity Created");
             loadHierarchicalData();
         }
     });
 };
 
 window.addChildEntity = function(label, table, foreignKey, parentId) {
-    if (!window.app) return;
     window.app.prompt(`Enter name for new ${label}:`, `Add ${label}`, async (val) => {
         if (val && val.trim()) {
             const payload = { name: val.trim() };
             payload[foreignKey] = parentId;
             await supabase.from(table).insert([payload]);
+            window.app.toast(`Added ${label} "${val.trim()}".`, "success", "Entity Created");
             loadHierarchicalData();
         }
     });
 };
 
 window.editEntity = function(table, id, currentName) {
-    if (!window.app) return;
-    window.app.prompt(`Enter new name for "${currentName}":`, `Edit Name`, async (val) => {
+    window.app.prompt(`Enter updated name for "${currentName}":`, `Edit Name`, async (val) => {
         if (val && val.trim() && val.trim() !== currentName) {
             await supabase.from(table).update({ name: val.trim() }).eq('id', id);
+            window.app.toast("Name updated successfully.", "success", "Updated");
             loadHierarchicalData();
         }
     });
 };
 
 window.deleteEntity = function(table, id, name) {
-    if (!window.app) return;
-    window.app.confirm(`Delete "${name}"?`, `Delete`, async () => {
+    window.app.confirm(`Delete "${name}"? Any sub-items will also be removed.`, `Delete Item`, async () => {
         await supabase.from(table).delete().eq('id', id);
+        window.app.toast(`"${name}" deleted.`, "info", "Deleted");
         loadHierarchicalData();
     });
 };

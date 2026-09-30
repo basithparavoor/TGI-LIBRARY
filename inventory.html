@@ -12,62 +12,135 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Sidebar -->
         <div id="sidebar-container"></div>
 
-        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <!-- Main Content Area -->
+        <div class="main-content-wrapper">
             <div id="topbar-container"></div>
             
             <main class="main-content">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                <!-- Page Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <div>
-                        <h1>Bulk Inventory Audit</h1>
-                        <p style="color: var(--text-secondary);">Continuously scan shelves to reconcile physical stock with the database.</p>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <span class="badge badge-brand" style="font-size: 0.7rem;"><span class="badge-dot"></span> AUDIT MODE</span>
+                            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Shelf Stock Reconciler</span>
+                        </div>
+                        <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.03em;">Inventory Stock Audit</h1>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem;">Rapidly scan barcodes along physical shelves to verify active stock and detect missing items.</p>
                     </div>
-                    <button class="btn btn-outline" id="btn-reconcile"><i data-lucide="file-check"></i> Generate Discrepancy Report</button>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <button class="btn btn-outline" id="btn-reset-audit"><i data-lucide="rotate-ccw" style="width: 16px;"></i> Reset Session</button>
+                        <button class="btn btn-primary" id="btn-reconcile"><i data-lucide="file-check" style="width: 16px;"></i> Discrepancy Report</button>
+                    </div>
                 </div>
 
                 <div class="responsive-grid-2">
-                    <!-- Scanner Panel -->
+                    <!-- Scanner & Manual Entry Column -->
                     <div class="card card-glass" style="display: flex; flex-direction: column;">
-                        <h2 style="margin-bottom: 1rem; font-size: 1.125rem;">Active Scanner</h2>
-                        <div id="audit-reader" style="width: 100%; min-height: 300px; border-radius: var(--radius-sm); overflow: hidden; background: #000; margin-bottom: 1rem;"></div>
-                        <div style="display: flex; gap: 1rem;">
-                            <button class="btn btn-primary" id="btn-start-audit" style="flex: 1;"><i data-lucide="play"></i> Start Scanning</button>
-                            <button class="btn btn-outline" id="btn-stop-audit" style="flex: 1;" disabled><i data-lucide="square"></i> Pause</button>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <div>
+                                <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Continuous Scanner</h2>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Point scanner along row of books</p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <button class="btn btn-sm btn-outline" id="btn-toggle-sound" title="Toggle Beep Sound">
+                                    <i data-lucide="volume-2" style="width: 14px;"></i> Audio
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Camera Viewfinder -->
+                        <div id="audit-reader" style="width: 100%; min-height: 260px; border-radius: var(--radius-sm); overflow: hidden; background: #000; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; color: white;">
+                            <div style="text-align: center; padding: 2rem;">
+                                <i data-lucide="camera" style="width: 36px; height: 36px; opacity: 0.6; margin-bottom: 0.5rem;"></i>
+                                <div style="font-size: 0.85rem; color: #94a3b8;">Click "Start Scanning" to activate camera</div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.75rem;">
+                            <button class="btn btn-primary" id="btn-start-audit" style="flex: 1;"><i data-lucide="play" style="width: 16px;"></i> Start Continuous Scan</button>
+                            <button class="btn btn-outline" id="btn-stop-audit" style="flex: 1;" disabled><i data-lucide="pause" style="width: 16px;"></i> Pause Scanner</button>
                         </div>
                         
-                        <!-- Manual Fallback -->
-                        <div class="input-group" style="margin-top: 1.5rem; margin-bottom: 0;">
-                            <label>Manual Barcode Entry</label>
+                        <!-- Manual Entry Fallback -->
+                        <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; display: block;">Manual Barcode / Handheld Scanner</label>
                             <div style="display: flex; gap: 0.5rem;">
-                                <input type="text" id="manual-audit-barcode" placeholder="Type barcode and press Enter">
-                                <button class="btn btn-outline" id="btn-add-manual">Add</button>
+                                <input type="text" id="manual-audit-barcode" placeholder="Scan or type barcode and press Enter..." style="flex: 1;">
+                                <button class="btn btn-outline" id="btn-add-manual"><i data-lucide="plus" style="width: 16px;"></i> Add</button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Scan Results Panel -->
+                    <!-- Progress & Session Feed Column -->
                     <div class="card card-glass" style="display: flex; flex-direction: column;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <h2 style="font-size: 1.125rem;">Session Progress</h2>
-                            <span class="badge badge-success" id="scan-count">0 Scanned</span>
+                            <div>
+                                <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Audit Progress</h2>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Real-time shelf reconciliation</p>
+                            </div>
+                            <span class="badge badge-success" id="scan-count" style="font-size: 0.8rem;">0 Scanned</span>
                         </div>
                         
-                        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem;">
-                            <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Expected Available Books: <span id="expected-count" style="font-weight: 600; color: var(--text-primary);">Loading...</span></p>
-                            <div style="width: 100%; background: var(--border-color); height: 8px; border-radius: 4px; overflow: hidden;">
-                                <div id="audit-progress-bar" style="width: 0%; height: 100%; background: var(--brand-primary); transition: width 0.3s ease;"></div>
+                        <!-- Progress Metric Box -->
+                        <div style="background: var(--bg-muted); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Stock Reconciled</span>
+                                <span id="audit-percent-text" style="font-size: 0.95rem; font-weight: 800; color: var(--brand-primary); font-family: var(--font-mono);">0%</span>
+                            </div>
+                            <div style="width: 100%; background: var(--border-color); height: 10px; border-radius: var(--radius-full); overflow: hidden; margin-bottom: 0.75rem;">
+                                <div id="audit-progress-bar" style="width: 0%; height: 100%; background: var(--brand-gradient); transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
+                                <span>Expected on Shelves: <strong id="expected-count" style="color: var(--text-primary);">...</strong></span>
+                                <span>Verified: <strong id="verified-count" style="color: var(--success);">0</strong></span>
                             </div>
                         </div>
 
-                        <h3 style="font-size: 0.875rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.5rem;">Recent Scans</h3>
-                        <div id="recent-scans-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
-                            <!-- Populated by JS -->
-                            <div style="text-align: center; color: var(--text-secondary); font-size: 0.875rem; padding: 2rem 0;">Start scanning to see items here.</div>
+                        <!-- Scanned Items Feed Header -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <h3 style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin: 0;">Audit Scan Stream</h3>
+                            <button class="btn btn-ghost btn-sm" id="btn-clear-scans" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; color: var(--text-muted);">Clear Stream</button>
+                        </div>
+
+                        <!-- Scan Feed List -->
+                        <div id="recent-scans-list" style="flex: 1; overflow-y: auto; max-height: 280px; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.25rem;">
+                            <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2.5rem 1rem;">
+                                <i data-lucide="scan" style="width: 32px; height: 32px; opacity: 0.4; margin-bottom: 0.5rem;"></i>
+                                <div>Activate scanner or enter barcodes to begin audit stream.</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </main>
+        </div>
+    </div>
+
+    <!-- DISCREPANCY REPORT MODAL -->
+    <div id="modal-discrepancy" class="app-dialog-overlay">
+        <div class="app-dialog" style="max-width: 640px; max-height: 85vh; overflow-y: auto; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                <div>
+                    <h2 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Audit Discrepancy Report</h2>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Summary of missing or misplaced books</p>
+                </div>
+                <button class="btn btn-ghost btn-icon close-discrepancy"><i data-lucide="x" style="width: 18px;"></i></button>
+            </div>
+
+            <div id="discrepancy-summary" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.25rem;">
+                <!-- Populated via JS -->
+            </div>
+
+            <div id="discrepancy-table-container" style="max-height: 260px; overflow-y: auto; margin-bottom: 1.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                <!-- Table injected via JS -->
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button class="btn btn-outline close-discrepancy">Close</button>
+                <button class="btn btn-primary" id="btn-download-discrepancy-csv"><i data-lucide="download" style="width: 16px;"></i> Download CSV</button>
+            </div>
         </div>
     </div>
 

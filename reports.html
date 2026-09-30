@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports - TGI LIBRARY</title>
+    <title>Reports & Analytics - TGI LIBRARY</title>
     <link rel="stylesheet" href="variables.css">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="components.css">
@@ -11,57 +11,76 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar injected via UI.js -->
+        <!-- Sidebar -->
         <div id="sidebar-container"></div>
 
-        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-            <!-- Topbar injected via UI.js -->
+        <!-- Main Content Area -->
+        <div class="main-content-wrapper">
             <div id="topbar-container"></div>
             
-            <main class="main-content page-padding">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <main class="main-content">
+                <!-- Page Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <div>
-                        <h1>Library Reports</h1>
-                        <p style="color: var(--text-secondary);">Generate, view, and export library analytics.</p>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <span class="badge badge-brand" style="font-size: 0.7rem;">ANALYTICS</span>
+                            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Export Engine</span>
+                        </div>
+                        <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.03em;">Library Reports & Audits</h1>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem;">Generate circulation records, overdue notices, fee ledgers, and inventory statistics.</p>
                     </div>
-                    <div style="display: flex; gap: 1rem;">
-                        <button class="btn btn-outline" id="btn-print" onclick="window.print()"><i data-lucide="printer" style="width: 18px;"></i> Print</button>
-                        <button class="btn btn-primary" id="btn-export-csv"><i data-lucide="download" style="width: 18px;"></i> Export CSV</button>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <button class="btn btn-outline" id="btn-print-report" onclick="window.print()"><i data-lucide="printer" style="width: 16px;"></i> Print PDF</button>
+                        <button class="btn btn-primary" id="btn-export-csv"><i data-lucide="download" style="width: 16px;"></i> Export CSV</button>
                     </div>
                 </div>
 
-                <!-- Report Controls -->
-                <div class="card" style="margin-bottom: 2rem; display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap;">
-                    <div class="input-group" style="margin-bottom: 0; min-width: 250px;">
-                        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500;">Report Type</label>
-                        <select id="report-type" style="padding: 0.75rem; width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius); outline: none;">
-                            <option value="overdue">Overdue Books</option>
-                            <option value="active_loans">All Active Loans</option>
-                            <option value="fines">Pending Fines</option>
+                <!-- Report Selection Bar -->
+                <div class="card card-glass" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; padding: 1.25rem 1.5rem;">
+                    <div class="input-group" style="margin-bottom: 0; min-width: 260px; flex: 1;">
+                        <label>Select Report Category</label>
+                        <select id="report-type">
+                            <option value="overdue">Overdue Books & Fines Notice</option>
+                            <option value="active_loans">All Active Member Loans</option>
+                            <option value="fines_ledger">Fines & Penalties Ledger</option>
+                            <option value="category_summary">Stock Breakdown by Category</option>
                         </select>
                     </div>
-                    <button class="btn btn-primary" id="btn-generate" style="height: fit-content; padding: 0.75rem 1.5rem;"><i data-lucide="bar-chart-2" style="width: 18px;"></i> Generate Report</button>
+                    <button class="btn btn-primary" id="btn-generate" style="padding: 0.75rem 1.5rem;">
+                        <i data-lucide="bar-chart-2" style="width: 16px;"></i> Generate Report
+                    </button>
+                </div>
+
+                <!-- KPI Metric Pills for the active report -->
+                <div id="report-kpi-row" class="stats-grid" style="display: none;">
+                    <!-- Injected dynamically -->
                 </div>
 
                 <!-- Report Data Table -->
-                <div class="card" style="padding: 0; overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left;" id="report-table">
-                        <thead style="background: var(--bg-primary);" id="report-thead">
-                            <!-- Headers injected via JS -->
-                            <tr>
-                                <th>Report Preview</th>
-                            </tr>
-                        </thead>
-                        <tbody id="report-tbody">
-                            <tr><td colspan="100%" style="padding: 3rem; text-align: center; color: var(--text-secondary);">Select a report type and click Generate.</td></tr>
-                        </tbody>
-                    </table>
+                <div class="card card-glass" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+                    <div class="table-responsive" style="min-height: 400px;">
+                        <table id="report-table">
+                            <thead id="report-thead">
+                                <tr>
+                                    <th>Report Preview</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-tbody">
+                                <tr>
+                                    <td style="padding: 3.5rem 1rem; text-align: center; color: var(--text-muted);">
+                                        <i data-lucide="bar-chart-3" style="width: 36px; height: 36px; opacity: 0.4; margin-bottom: 0.5rem;"></i>
+                                        <div style="font-weight: 600; font-size: 1rem; color: var(--text-primary);">No report generated yet</div>
+                                        <p style="font-size: 0.85rem; margin-top: 0.25rem;">Select a report category above and click "Generate Report".</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </main>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script>lucide.createIcons();</script>
     <script type="module" src="auth.js"></script>
     <script type="module" src="ui.js"></script>

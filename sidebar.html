@@ -1,46 +1,74 @@
 <aside class="sidebar">
-    <div class="brand" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem;">
-        <div style="background: var(--brand-primary); color: white; padding: 0.5rem; border-radius: 8px; display: flex;">
-            <i data-lucide="library"></i>
+    <div class="brand" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.75rem; padding: 0.25rem 0.5rem;">
+        <div style="background: var(--brand-gradient); color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-glow-brand); flex-shrink: 0;">
+            <i data-lucide="library" style="width: 22px; height: 22px;"></i>
         </div>
-        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">TGI LIBRARY</h2>
+        <div>
+            <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; margin: 0;">TGI LIBRARY</h2>
+            <p style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Management System</p>
+        </div>
     </div>
     
-    <nav style="display: flex; flex-direction: column; gap: 0.25rem;">
-        <p style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); margin: 1rem 0 0.5rem 0.5rem; font-weight: 600;">Main Menu</p>
+    <nav style="display: flex; flex-direction: column; gap: 0.25rem; flex: 1;">
+        <p style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); margin: 0.75rem 0 0.5rem 0.75rem; font-weight: 700; letter-spacing: 0.08em;">Core Workspace</p>
         
         <a href="index.html" class="nav-item">
-            <i data-lucide="layout-dashboard"></i> Dashboard
+            <i data-lucide="layout-dashboard"></i> 
+            <span>Dashboard</span>
         </a>
         <a href="circulation.html" class="nav-item">
-            <i data-lucide="repeat"></i> Circulation
+            <i data-lucide="repeat"></i> 
+            <span>Circulation Desk</span>
+            <span class="badge badge-brand" style="margin-left: auto; font-size: 0.65rem; padding: 0.15rem 0.45rem;">Desk</span>
         </a>
         <a href="books.html" class="nav-item">
-            <i data-lucide="book-open"></i> Catalogue
+            <i data-lucide="book-open"></i> 
+            <span>Book Catalogue</span>
         </a>
         <a href="students.html" class="nav-item">
-            <i data-lucide="users"></i> Members
+            <i data-lucide="users"></i> 
+            <span>Members</span>
         </a>
         
-        <p style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); margin: 1.5rem 0 0.5rem 0.5rem; font-weight: 600;">Operations</p>
+        <p style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); margin: 1.25rem 0 0.5rem 0.75rem; font-weight: 700; letter-spacing: 0.08em;">Operations & Tools</p>
         
         <a href="inventory.html" class="nav-item">
-            <i data-lucide="scan-line"></i> Inventory Audit
+            <i data-lucide="scan-line"></i> 
+            <span>Inventory Audit</span>
         </a>
         <a href="inspect.html" class="nav-item">
-            <i data-lucide="microscope"></i> Inspector
+            <i data-lucide="microscope"></i> 
+            <span>Universal Inspector</span>
         </a>
         <a href="barcode_printer.html" class="nav-item">
-            <i data-lucide="printer"></i> Print Labels
+            <i data-lucide="printer"></i> 
+            <span>Print Barcodes</span>
         </a>
         
-        <p style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); margin: 1.5rem 0 0.5rem 0.5rem; font-weight: 600;">System</p>
+        <p style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); margin: 1.25rem 0 0.5rem 0.75rem; font-weight: 700; letter-spacing: 0.08em;">Administration</p>
         
         <a href="reports.html" class="nav-item">
-            <i data-lucide="bar-chart-3"></i> Reports
+            <i data-lucide="bar-chart-3"></i> 
+            <span>Reports & Analytics</span>
         </a>
         <a href="settings.html" class="nav-item">
-            <i data-lucide="settings"></i> Settings & Locations
+            <i data-lucide="settings"></i> 
+            <span>Settings & Master Data</span>
+        </a>
+        <a href="student_portal.html" class="nav-item" target="_blank" style="color: var(--brand-primary); background: rgba(59, 130, 246, 0.05); margin-top: 0.5rem;">
+            <i data-lucide="external-link"></i> 
+            <span>Student OPAC Portal</span>
         </a>
     </nav>
+
+    <!-- Sidebar Footer -->
+    <div style="padding-top: 1.5rem; margin-top: auto; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
+            <span>System Status</span>
+            <span class="badge badge-success" style="font-size: 0.65rem; padding: 0.15rem 0.45rem;"><span class="badge-dot"></span> Online</span>
+        </div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); text-align: center;">
+            TGI LMS v2.5 • Premium Edition
+        </div>
+    </div>
 </aside>

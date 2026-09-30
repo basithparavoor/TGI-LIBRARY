@@ -3,123 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Library - TGI LIBRARY</title>
+    <title>Patron OPAC Portal - TGI LIBRARY</title>
     <link rel="stylesheet" href="variables.css">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="components.css">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <!-- Simplified App Container for Students (No Sidebar) -->
     <div style="min-height: 100vh; display: flex; flex-direction: column; background: var(--bg-primary);">
         
-        <!-- Header -->
-        <header style="background: var(--bg-surface); border-bottom: 1px solid var(--border-color); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10;">
+        <!-- OPAC Top Header -->
+        <header style="background: var(--bg-glass-strong); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); padding: 0.85rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 80;">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <div style="background: var(--brand-primary); color: white; padding: 0.5rem; border-radius: 8px; display: flex;">
-                    <i data-lucide="library"></i>
+                <div style="background: var(--brand-gradient); color: white; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-glow-brand);">
+                    <i data-lucide="library" style="width: 20px; height: 20px;"></i>
                 </div>
-                <h2 style="font-size: 1.25rem; font-weight: 700;">Athena OPAC</h2>
+                <div>
+                    <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">TGI OPAC</h2>
+                    <p style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin: 0;">Online Public Access Catalog</p>
+                </div>
             </div>
             
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button id="theme-toggle-student" style="background: transparent; border: none; cursor: pointer; color: var(--text-secondary);"><i data-lucide="moon"></i></button>
-                <div style="width: 1px; height: 24px; background: var(--border-color);"></div>
-                <button class="btn btn-outline btn-sm" onclick="alert('Logging out...'); window.location.href='login.html'">Sign Out</button>
+            <div style="display: flex; align-items: center; gap: 0.85rem;">
+                <!-- Theme toggle -->
+                <button id="theme-toggle-student" class="btn btn-ghost btn-icon" title="Toggle Theme" style="border-radius: 50%;">
+                    <i data-lucide="moon" style="width: 18px; height: 18px;"></i>
+                </button>
+                <div style="width: 1px; height: 20px; background: var(--border-color);"></div>
+                <a href="login.html" class="btn btn-outline btn-sm"><i data-lucide="log-in" style="width: 14px;"></i> Staff Login</a>
             </div>
         </header>
 
-        <main style="flex: 1; max-width: 1200px; margin: 0 auto; width: 100%; padding: 2rem;">
+        <!-- Main Portal Container -->
+        <main style="flex: 1; max-width: 1280px; margin: 0 auto; width: 100%; padding: 2rem 1.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
             
-            <div style="margin-bottom: 2rem;">
-                <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Welcome, <span id="student-name">Student</span></h1>
-                <p style="color: var(--text-secondary);">Search the catalog, view your loans, and place holds on unavailable items.</p>
+            <!-- Hero Banner -->
+            <div class="card card-glass" style="background: linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(99,102,241,0.06) 100%); border-color: rgba(59,130,246,0.25); padding: 2rem;">
+                <div style="max-width: 700px;">
+                    <span class="badge badge-brand" style="margin-bottom: 0.5rem;"><span class="badge-dot"></span> OPAC SEARCH</span>
+                    <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.5rem;">Discover Books & Research Materials</h1>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.25rem;">Search the entire institute library collection in real time. Check live shelf availability and reserve titles.</p>
+                    
+                    <div style="position: relative;">
+                        <i data-lucide="search" style="position: absolute; left: 1.25rem; top: 1.1rem; color: var(--brand-primary); width: 20px; height: 20px;"></i>
+                        <input type="text" id="opac-search" placeholder="Search by title, author, subject, or ISBN..." style="padding: 1rem 1rem 1rem 3.25rem; font-size: 1.05rem; border-radius: var(--radius); box-shadow: var(--shadow-md); border-color: rgba(59,130,246,0.3);">
+                    </div>
+                </div>
             </div>
 
             <div class="responsive-grid-2">
-                
-                <!-- Left Column: Search & Catalog -->
-                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                    
-                    <div class="card card-glass" style="padding: 1rem;">
-                        <div class="input-group" style="margin-bottom: 0; position: relative;">
-                            <i data-lucide="search" style="position: absolute; left: 1rem; top: 0.85rem; color: var(--text-secondary);"></i>
-                            <input type="text" id="opac-search" placeholder="Search books by title, author, or keyword..." style="padding-left: 3rem; font-size: 1rem;">
-                        </div>
+                <!-- Left: Catalog Results -->
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0;">Catalog Results</h2>
+                        <span id="opac-results-count" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Loading collection...</span>
                     </div>
 
-                    <div class="card card-glass" style="min-height: 400px;">
-                        <h2 style="font-size: 1.125rem; margin-bottom: 1rem;">Search Results</h2>
-                        <div id="opac-results" style="display: flex; flex-direction: column; gap: 1rem;">
-                            <!-- Mock Example of a Book Card with Hold Button -->
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
-                                <div>
-                                    <h3 style="font-size: 1rem; font-weight: 600;">The Pragmatic Programmer</h3>
-                                    <p style="font-size: 0.875rem; color: var(--text-secondary);">David Thomas • Computer Science</p>
-                                    <span class="badge badge-danger" style="margin-top: 0.5rem;">0 Copies Available</span>
-                                </div>
-                                <button class="btn btn-outline" onclick="alert('Hold placed! You are #1 in queue. You will be notified when it is returned.')"><i data-lucide="bookmark-plus" style="width: 16px;"></i> Place Hold</button>
-                            </div>
-
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
-                                <div>
-                                    <h3 style="font-size: 1rem; font-weight: 600;">Clean Code</h3>
-                                    <p style="font-size: 0.875rem; color: var(--text-secondary);">Robert C. Martin • Computer Science</p>
-                                    <span class="badge badge-success" style="margin-top: 0.5rem;">3 Copies Available</span>
-                                </div>
-                                <span style="font-size: 0.875rem; color: var(--text-secondary);">Available on Shelf</span>
-                            </div>
+                    <div id="opac-results-container" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                        <div style="padding: 3rem; text-align: center; color: var(--text-muted);">
+                            <i data-lucide="loader-2" class="animate-spin" style="width: 28px; height: 28px; margin-bottom: 0.5rem;"></i>
+                            <div>Loading available titles...</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Column: My Account -->
-                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                    
-                    <!-- Active Loans -->
+                <!-- Right: Quick Member Check & Library Info -->
+                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                    <!-- Member Lookup Widget -->
                     <div class="card card-glass">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-                            <i data-lucide="book-open" style="color: var(--brand-primary);"></i>
-                            <h2 style="font-size: 1.125rem;">My Active Loans</h2>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(59,130,246,0.1); color: var(--brand-primary); display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="user-check" style="width: 16px;"></i>
+                            </div>
+                            <h3 style="font-size: 1rem; font-weight: 700; margin: 0;">Check My Active Loans</h3>
                         </div>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">Enter your Student Register ID to view your due dates and fine status.</p>
                         
-                        <div style="border-left: 3px solid var(--warning); padding-left: 1rem; margin-bottom: 1rem;">
-                            <h4 style="font-size: 0.875rem; font-weight: 600;">Design Patterns</h4>
-                            <p style="font-size: 0.75rem; color: var(--text-secondary);">Due: Tomorrow</p>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <input type="text" id="member-lookup-id" placeholder="e.g. REG-2026-001" style="flex: 1;">
+                            <button class="btn btn-primary btn-sm" id="btn-member-lookup">Check</button>
                         </div>
-                        
-                        <div style="border-left: 3px solid var(--success); padding-left: 1rem;">
-                            <h4 style="font-size: 0.875rem; font-weight: 600;">Introduction to Algorithms</h4>
-                            <p style="font-size: 0.75rem; color: var(--text-secondary);">Due: In 12 Days</p>
+
+                        <div id="member-lookup-result" style="display: none; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                            <!-- Injected dynamically -->
                         </div>
                     </div>
 
-                    <!-- Pending Fines -->
-                    <div class="card card-glass" style="border-top: 4px solid var(--danger);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <h2 style="font-size: 1.125rem;">Pending Fines</h2>
-                            <span style="font-size: 1.25rem; font-weight: 700; color: var(--danger);">₹0.00</span>
+                    <!-- Library Hours & Guidelines -->
+                    <div class="card card-glass" style="font-size: 0.85rem;">
+                        <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <i data-lucide="clock" style="width: 16px; color: var(--brand-primary);"></i> Library Timings & Policies
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; color: var(--text-secondary);">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Monday – Friday:</span>
+                                <strong style="color: var(--text-primary);">8:00 AM – 8:00 PM</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Saturday:</span>
+                                <strong style="color: var(--text-primary);">9:00 AM – 5:00 PM</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Standard Borrowing:</span>
+                                <strong style="color: var(--text-primary);">14 Days (3 Books Max)</strong>
+                            </div>
                         </div>
-                        <p style="font-size: 0.875rem; color: var(--text-secondary); text-align: center;">You have no pending fines. Great job!</p>
                     </div>
-
-                    <!-- My Holds -->
-                    <div class="card card-glass">
-                        <h2 style="font-size: 1.125rem; margin-bottom: 1rem;">My Holds Queue</h2>
-                        <div style="font-size: 0.875rem; color: var(--text-secondary); text-align: center; padding: 1rem 0;">No active holds.</div>
-                    </div>
-
                 </div>
             </div>
         </main>
     </div>
-    
-    <script>
-        lucide.createIcons();
-        document.getElementById('theme-toggle-student').addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            document.documentElement.setAttribute('data-theme', currentTheme === 'light' ? 'dark' : 'light');
+
+    <!-- Toast container for portal -->
+    <div id="toast-container"></div>
+
+    <script>lucide.createIcons();</script>
+    <script type="module" src="ui.js"></script>
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+
+        let catalog = [];
+        const searchInput = document.getElementById('opac-search');
+        const resultsContainer = document.getElementById('opac-results-container');
+        const countText = document.getElementById('opac-results-count');
+
+        async function loadCatalog() {
+            try {
+                const { data, error } = await supabase
+                    .from('books')
+                    .select(`
+                        id, title, author, isbn, price, edition,
+                        categories(name),
+                        publishers(name),
+                        book_copies(id, status, shelves(name), racks(name))
+                    `)
+                    .order('title');
+
+                if (error) throw error;
+                catalog = data || [];
+                renderResults(catalog);
+            } catch (err) {
+                resultsContainer.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--danger);">Failed to load catalog.</div>`;
+            }
+        }
+
+        function renderResults(books) {
+            countText.innerText = `${books.length} titles found`;
+
+            if (books.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="card card-glass" style="padding: 3rem 1rem; text-align: center; color: var(--text-muted);">
+                        <i data-lucide="book-x" style="width: 36px; height: 36px; opacity: 0.4; margin-bottom: 0.5rem;"></i>
+                        <div style="font-weight: 600; color: var(--text-primary);">No books match your search</div>
+                        <p style="font-size: 0.85rem; margin-top: 0.25rem;">Try searching for a different keyword, author, or subject.</p>
+                    </div>
+                `;
+            } else {
+                resultsContainer.innerHTML = books.map(book => {
+                    const totalCopies = book.book_copies?.length || 0;
+                    const availCopies = book.book_copies?.filter(c => c.status === 'AVAILABLE').length || 0;
+                    const isAvailable = availCopies > 0;
+                    const category = book.categories?.name || 'General';
+                    const sampleCopy = book.book_copies?.[0];
+                    const shelfLoc = sampleCopy?.shelves?.name ? `${sampleCopy.shelves.name}${sampleCopy.racks?.name ? ' / ' + sampleCopy.racks.name : ''}` : 'General Section';
+
+                    return `
+                        <div class="card card-glass card-interactive" style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                            <div style="flex: 1; min-width: 240px;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                    <span class="badge badge-brand" style="font-size: 0.65rem;">${category}</span>
+                                    ${book.edition ? `<span style="font-size: 0.75rem; color: var(--text-muted);">${book.edition}</span>` : ''}
+                                </div>
+                                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.25rem 0;">${book.title}</h3>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Author: <strong>${book.author}</strong> ${book.publishers?.name ? '• ' + book.publishers.name : ''}</p>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                                    Shelf Location: <strong style="color: var(--brand-primary);">${shelfLoc}</strong>
+                                    ${book.isbn ? ` • ISBN: <span style="font-family: var(--font-mono);">${book.isbn}</span>` : ''}
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; flex-shrink: 0;">
+                                <span class="badge ${isAvailable ? 'badge-success' : 'badge-danger'}" style="font-size: 0.75rem;">
+                                    <span class="badge-dot"></span> ${availCopies} / ${totalCopies} Available
+                                </span>
+                                <button class="btn btn-sm ${isAvailable ? 'btn-outline' : 'btn-primary'}" onclick="window.placeHold('${book.title.replace(/'/g, "\\'")}', ${isAvailable})">
+                                    <i data-lucide="${isAvailable ? 'bookmark' : 'bookmark-plus'}" style="width: 14px;"></i> ${isAvailable ? 'Reserve Copy' : 'Join Waitlist'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.placeHold = function(title, isAvailable) {
+            window.app?.toast(
+                isAvailable 
+                    ? `Copy of "${title}" held for pickup at the circulation desk for 24 hours.`
+                    : `You have been added to the reservation queue for "${title}". You will be alerted when a copy is returned.`,
+                "success",
+                "Reservation Placed"
+            );
+        };
+
+        // Live Search Filter
+        let timeout = null;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(timeout);
+            const query = e.target.value.toLowerCase().trim();
+            timeout = setTimeout(() => {
+                const filtered = catalog.filter(b => 
+                    (b.title && b.title.toLowerCase().includes(query)) ||
+                    (b.author && b.author.toLowerCase().includes(query)) ||
+                    (b.isbn && b.isbn.toLowerCase().includes(query)) ||
+                    (b.categories?.name && b.categories.name.toLowerCase().includes(query))
+                );
+                renderResults(filtered);
+            }, 200);
         });
+
+        // Member Lookup Widget
+        document.getElementById('btn-member-lookup').addEventListener('click', async () => {
+            const memberId = document.getElementById('member-lookup-id').value.trim();
+            const resultBox = document.getElementById('member-lookup-result');
+            if (!memberId) return;
+
+            resultBox.style.display = 'block';
+            resultBox.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;"><i data-lucide="loader-2" class="animate-spin" style="width: 16px; height: 16px;"></i> Checking records...</div>`;
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                const { data: student } = await supabase
+                    .from('students')
+                    .select('id, name, student_id, status')
+                    .eq('student_id', memberId)
+                    .maybeSingle();
+
+                if (!student) {
+                    resultBox.innerHTML = `<div style="color: var(--danger); font-size: 0.85rem; text-align: center;">No member found with ID: "${memberId}".</div>`;
+                    return;
+                }
+
+                const { data: loans } = await supabase
+                    .from('loans')
+                    .select('id, due_date, book_copies(barcode, books(title))')
+                    .eq('student_id', student.id)
+                    .eq('status', 'ACTIVE');
+
+                resultBox.innerHTML = `
+                    <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">${student.name}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">Status: <span class="badge badge-success" style="font-size: 0.65rem;">${student.status}</span></div>
+
+                    <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem;">Active Loans (${loans?.length || 0}):</div>
+                    ${loans && loans.length > 0 ? loans.map(l => {
+                        const isOverdue = new Date() > new Date(l.due_date);
+                        return `
+                            <div style="background: var(--bg-surface); padding: 0.5rem; border-radius: var(--radius-xs); border: 1px solid var(--border-color); margin-bottom: 0.35rem; font-size: 0.8rem;">
+                                <div style="font-weight: 600;">${l.book_copies?.books?.title || 'Book'}</div>
+                                <div style="font-size: 0.7rem; color: ${isOverdue ? 'var(--danger)' : 'var(--text-muted)'};">
+                                    Due: ${new Date(l.due_date).toLocaleDateString()} ${isOverdue ? '(OVERDUE)' : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('') : '<div style="font-size: 0.75rem; color: var(--text-muted);">No active borrowings on this account.</div>'}
+                `;
+            } catch (e) {
+                resultBox.innerHTML = `<div style="color: var(--danger); font-size: 0.85rem;">Lookup failed.</div>`;
+            }
+        });
+
+        // Theme Toggle
+        document.getElementById('theme-toggle-student').addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+
+        document.addEventListener('DOMContentLoaded', loadCatalog);
     </script>
 </body>
 </html>

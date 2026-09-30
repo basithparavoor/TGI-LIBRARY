@@ -3,100 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - TGI LIBRARY</title>
+    <title>System Settings - TGI LIBRARY</title>
     <link rel="stylesheet" href="variables.css">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="components.css">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .tab-btn.active {
-            background: rgba(37, 99, 235, 0.1);
-            border-color: var(--brand-primary);
-            color: var(--brand-primary);
+        .tab-btn { 
+            border-radius: var(--radius-sm);
+            padding: 0.6rem 1.25rem;
+            color: var(--text-secondary);
             font-weight: 600;
+            background: transparent;
+            border: 1px solid transparent;
+            transition: all var(--transition-fast);
         }
-        .tab-btn { border-color: transparent; color: var(--text-secondary); transition: all var(--transition-fast); }
-        .tab-btn:hover:not(.active) { background: var(--bg-primary); border-color: var(--border-color); }
+        .tab-btn.active {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: var(--brand-primary);
+        }
+        .tab-btn:hover:not(.active) {
+            background: var(--bg-muted);
+            color: var(--text-primary);
+        }
     </style>
 </head>
 <body>
     <div class="app-container">
+        <!-- Sidebar -->
         <div id="sidebar-container"></div>
 
-        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <!-- Main Content Area -->
+        <div class="main-content-wrapper">
             <div id="topbar-container"></div>
             
             <main class="main-content">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                <!-- Page Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <div>
-                        <h1>System Settings</h1>
-                        <p style="color: var(--text-secondary);">Configure library rules and manage master data hierarchies.</p>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <span class="badge badge-brand" style="font-size: 0.7rem;">CONFIGURATION</span>
+                            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Rules & Master Entities</span>
+                        </div>
+                        <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.03em;">System Settings</h1>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem;">Configure circulation rules, fine policies, and academic & shelving hierarchies.</p>
                     </div>
                 </div>
 
                 <!-- Tabs -->
-                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-                    <button class="btn tab-btn active" data-target="panel-general">General Rules</button>
-                    <button class="btn tab-btn" data-target="panel-master-data">Master Data</button>
+                <div style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                    <button class="tab-btn active" data-target="panel-general">Circulation Rules</button>
+                    <button class="tab-btn" data-target="panel-master-data">Master Data Hierarchy</button>
                 </div>
 
                 <!-- PANEL 1: GENERAL SETTINGS -->
                 <div id="panel-general" class="card card-glass tab-panel" style="display: block;">
-                    <h2 style="margin-bottom: 1.5rem; font-size: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">Circulation Rules</h2>
+                    <h2 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.25rem;">Circulation & Overdue Policies</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">These rules govern loan durations and overdue fine calculations across all terminals.</p>
+                    
                     <form id="settings-form">
-                        <div class="responsive-grid-2">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
                             <div class="input-group">
-                                <label>Default Loan Period (Days)</label>
-                                <input type="number" id="setting-loan-days" value="14" required>
+                                <label>Default Loan Period (Days) *</label>
+                                <input type="number" id="setting-loan-days" value="14" min="1" max="90" required>
                             </div>
                             <div class="input-group">
-                                <label>Overdue Fine (₹ per day)</label>
-                                <input type="number" id="setting-fine-amount" step="0.5" value="2.00" required>
+                                <label>Overdue Fine Rate (₹ per day) *</label>
+                                <input type="number" id="setting-fine-amount" step="0.5" value="2.00" min="0" required>
                             </div>
                             <div class="input-group">
-                                <label>Maximum Books per Student</label>
-                                <input type="number" id="setting-max-books" value="3" required>
+                                <label>Max Books per Member *</label>
+                                <input type="number" id="setting-max-books" value="3" min="1" max="20" required>
                             </div>
                             <div class="input-group">
-                                <label>Maximum Renewals Allowed</label>
-                                <input type="number" id="setting-max-renewals" value="1" required>
+                                <label>Max Allowed Renewals *</label>
+                                <input type="number" id="setting-max-renewals" value="1" min="0" max="5" required>
                             </div>
                         </div>
-                        <div style="margin-top: 1.5rem; text-align: right;">
-                            <button type="submit" class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+
+                        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+                            <button type="submit" class="btn btn-primary" id="btn-save-settings">
+                                <i data-lucide="save" style="width: 16px;"></i> Save Circulation Settings
+                            </button>
                         </div>
                     </form>
                 </div>
 
                 <!-- PANEL 2: MASTER DATA -->
                 <div id="panel-master-data" class="card card-glass tab-panel" style="display: none;">
-                    <h2 style="margin-bottom: 1.5rem; font-size: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">Master Data Hierarchy</h2>
+                    <h2 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.25rem;">Master Data Hierarchy</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">Manage departments, student classes, library shelves, and physical rack divisions.</p>
                     
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-                        <!-- Academic Structure -->
-                        <div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+                        <!-- Academic Structure Column -->
+                        <div class="card" style="background: var(--bg-surface);">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                <h3 style="font-size: 1rem;">Academic Departments</h3>
-                                <button class="btn btn-primary btn-sm" onclick="addParentEntity('Department', 'departments')"><i data-lucide="plus" style="width: 16px;"></i> New Dept</button>
+                                <div>
+                                    <h3 style="font-size: 1rem; font-weight: 700; margin: 0;">Academic Structure</h3>
+                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Departments & Classes</p>
+                                </div>
+                                <button class="btn btn-primary btn-sm" onclick="window.addParentEntity('Department', 'departments')">
+                                    <i data-lucide="plus" style="width: 14px;"></i> New Dept
+                                </button>
                             </div>
-                            <div id="tree-academic" style="max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
-                                <div style="padding: 1rem; text-align: center; color: var(--text-secondary);">Loading...</div>
+                            <div id="tree-academic" style="max-height: 480px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div style="padding: 2rem; text-align: center; color: var(--text-muted);">Loading departments...</div>
                             </div>
                         </div>
 
-                        <!-- Physical Locations -->
-                        <div>
+                        <!-- Physical Locations Column -->
+                        <div class="card" style="background: var(--bg-surface);">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                <h3 style="font-size: 1rem;">Library Locations</h3>
-                                <button class="btn btn-primary btn-sm" onclick="addParentEntity('Shelf', 'shelves')"><i data-lucide="plus" style="width: 16px;"></i> New Shelf</button>
+                                <div>
+                                    <h3 style="font-size: 1rem; font-weight: 700; margin: 0;">Library Storage</h3>
+                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Shelves & Compartment Racks</p>
+                                </div>
+                                <button class="btn btn-primary btn-sm" onclick="window.addParentEntity('Shelf', 'shelves')">
+                                    <i data-lucide="plus" style="width: 14px;"></i> New Shelf
+                                </button>
                             </div>
-                            <div id="tree-locations" style="max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
-                                <div style="padding: 1rem; text-align: center; color: var(--text-secondary);">Loading...</div>
+                            <div id="tree-locations" style="max-height: 480px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div style="padding: 2rem; text-align: center; color: var(--text-muted);">Loading shelves...</div>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </main>
         </div>
     </div>

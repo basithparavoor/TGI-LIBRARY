@@ -3,195 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catalogue - TGI LIBRARY</title>
+    <title>Book Catalogue - TGI LIBRARY</title>
     <link rel="stylesheet" href="variables.css">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="components.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
     <div class="app-container">
+        <!-- Sidebar -->
         <div id="sidebar-container"></div>
 
-        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <!-- Main Content Area -->
+        <div class="main-content-wrapper">
             <div id="topbar-container"></div>
             
-            <!-- Replace the <main> section in books.html -->
-<main class="main-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-    <div>
-        <h1>Book Catalogue</h1>
-        <p style="color: var(--text-secondary);">Manage library inventory and physical copies.</p>
-    </div>
-    <div style="display: flex; gap: 1rem;">
-        <button class="btn btn-outline" id="btn-bulk-import"><i data-lucide="upload"></i> Bulk Import</button>
-        <button class="btn btn-primary" id="btn-add-book"><i data-lucide="plus"></i> Add New Book</button>
-    </div>
-</div>
-
-    <div class="card card-glass" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
-        <!-- Data Grid Toolbar -->
-        <div class="data-grid-toolbar">
-            <div style="display: flex; gap: 1rem; flex: 1; min-width: 300px;">
-                <div class="input-group" style="margin: 0; flex: 1; position: relative;">
-                    <i data-lucide="search" style="position: absolute; left: 1rem; top: 0.85rem; color: var(--text-secondary); width: 18px;"></i>
-                    <input type="text" id="search-books" placeholder="Search title, author, isbn..." style="padding-left: 3rem;">
+            <main class="main-content">
+                <!-- Page Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <span class="badge badge-brand" style="font-size: 0.7rem;">CATALOGUE</span>
+                            <span id="total-books-counter" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Loading...</span>
+                        </div>
+                        <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.03em;">Book Catalogue</h1>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem;">Manage library inventory, physical copies, and shelving locations.</p>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <button class="btn btn-outline" id="btn-bulk-import"><i data-lucide="upload" style="width: 16px;"></i> Bulk Import</button>
+                        <button class="btn btn-primary" id="btn-add-book"><i data-lucide="plus" style="width: 16px;"></i> Add New Book</button>
+                    </div>
                 </div>
-                <select id="filter-category" class="input-group" style="margin: 0; width: 200px; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); outline: none; background: var(--bg-surface);">
-                    <option value="">All Categories</option>
-                </select>
+
+                <!-- Main Card Container -->
+                <div class="card card-glass" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+                    <!-- Data Grid Toolbar -->
+                    <div class="data-grid-toolbar">
+                        <div style="display: flex; gap: 0.75rem; flex: 1; min-width: 280px; flex-wrap: wrap;">
+                            <div class="input-group" style="margin: 0; flex: 1; min-width: 200px; position: relative;">
+                                <i data-lucide="search" style="position: absolute; left: 1rem; top: 0.85rem; color: var(--text-muted); width: 16px; height: 16px;"></i>
+                                <input type="text" id="search-books" placeholder="Search by title, author, ISBN..." style="padding-left: 2.75rem;">
+                            </div>
+                            <select id="filter-category" style="width: auto; min-width: 160px;">
+                                <option value="">All Categories</option>
+                            </select>
+                            <select id="filter-status" style="width: auto; min-width: 150px;">
+                                <option value="">All Availability</option>
+                                <option value="available">In Stock (Available)</option>
+                                <option value="checked_out">All Checked Out</option>
+                            </select>
+                        </div>
+                        
+                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <span id="selection-count" class="selected-count" style="display: none;">0 Selected</span>
+                            <button id="btn-batch-delete" class="btn btn-sm btn-danger" style="display: none;"><i data-lucide="trash-2" style="width: 14px;"></i> Delete Selected</button>
+                            <button class="btn btn-outline btn-sm" onclick="window.exportData('csv')"><i data-lucide="file-spreadsheet" style="width: 15px;"></i> CSV</button>
+                            <button class="btn btn-outline btn-sm" onclick="window.exportData('pdf')"><i data-lucide="printer" style="width: 15px;"></i> Print</button>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="table-responsive" style="flex: 1; min-height: 400px;">
+                        <table id="books-table">
+                            <thead>
+                                <tr>
+                                    <th class="checkbox-cell"><input type="checkbox" id="select-all" class="custom-checkbox"></th>
+                                    <th>Book Details</th>
+                                    <th>ISBN / Edition</th>
+                                    <th>Category</th>
+                                    <th>Copies & Availability</th>
+                                    <th style="text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="books-table-body">
+                                <tr>
+                                    <td colspan="6" style="padding: 3rem; text-align: center; color: var(--text-muted);">
+                                        <i data-lucide="loader-2" class="animate-spin" style="width: 28px; height: 28px; margin-bottom: 0.5rem;"></i>
+                                        <div>Loading book catalogue...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Table Footer & Pagination -->
+                    <div class="table-footer">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                            <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Rows per page:</span>
+                            <select id="rows-per-page" style="width: 70px; padding: 0.35rem 0.5rem; border-radius: var(--radius-xs);">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;" id="pagination-info">Showing 0-0 of 0</span>
+                        </div>
+                        <div class="pagination-controls">
+                            <button class="btn btn-outline btn-sm" id="btn-prev-page" disabled><i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i> Prev</button>
+                            <span style="font-size: 0.85rem; font-weight: 600; padding: 0 0.5rem;" id="current-page-display">Page 1</span>
+                            <button class="btn btn-outline btn-sm" id="btn-next-page" disabled>Next <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ADD / EDIT BOOK MODAL -->
+    <div id="modal-add-book" class="app-dialog-overlay">
+        <div class="app-dialog" style="max-width: 720px; max-height: 90vh; overflow-y: auto; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                <div>
+                    <h2 id="modal-book-title" style="font-size: 1.35rem; font-weight: 800; margin: 0;">Add New Book to Catalogue</h2>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Fill in the metadata to register this title and generate barcodes.</p>
+                </div>
+                <button id="btn-close-modal" class="btn btn-ghost btn-icon"><i data-lucide="x" style="width: 18px; height: 18px;"></i></button>
             </div>
             
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <span id="selection-count" class="selected-count" style="display: none;">0 Selected</span>
-                <button class="btn btn-outline btn-sm" onclick="exportData('csv')"><i data-lucide="file-spreadsheet" style="width: 16px;"></i> CSV</button>
-                <button class="btn btn-outline btn-sm" onclick="exportData('pdf')"><i data-lucide="file-text" style="width: 16px;"></i> PDF</button>
-            </div>
-        </div>
-
-        <!-- Data Table -->
-        <div class="table-responsive" style="flex: 1; overflow-y: auto; min-height: 400px;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left;" id="books-table">
-                <thead style="background: var(--bg-primary); position: sticky; top: 0; z-index: 5;">
-                    <tr>
-                        <th class="checkbox-cell"><input type="checkbox" id="select-all" class="custom-checkbox"></th>
-                        <th>Title & Author</th>
-                        <th>ISBN</th>
-                        <th>Category</th>
-                        <th>Copies</th>
-                        <th style="text-align: right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="books-table-body">
-                    <tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-secondary);">Loading catalog...</td></tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Table Footer / Pagination -->
-        <div class="table-footer">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <span style="font-size: 0.875rem; color: var(--text-secondary);">Rows per page:</span>
-                <select id="rows-per-page" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); outline: none;">
-                    <option value="10">10</option>
-                    <option value="25" selected>25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-                <span style="font-size: 0.875rem; color: var(--text-secondary);" id="pagination-info">Showing 0-0 of 0</span>
-            </div>
-            <div class="pagination-controls">
-                <button class="btn btn-outline btn-sm" id="btn-prev-page" disabled><i data-lucide="chevron-left" style="width: 16px;"></i></button>
-                <span style="font-size: 0.875rem; font-weight: 500;" id="current-page-display">Page 1</span>
-                <button class="btn btn-outline btn-sm" id="btn-next-page" disabled><i data-lucide="chevron-right" style="width: 16px;"></i></button>
-            </div>
-        </div>
-    </div>
-</main>
-        </div>
-    </div>
-
-   <!-- UPDATE ONLY THE MODAL SECTION IN books.html -->
-<div id="modal-add-book" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
-    <div class="card card-glass" style="width: 100%; max-width: 700px; position: relative; max-height: 90vh; overflow-y: auto;">
-        <button id="btn-close-modal" style="position: absolute; right: 1rem; top: 1rem; background: transparent; border: none; cursor: pointer; color: var(--text-secondary);"><i data-lucide="x"></i></button>
-        <h2 style="margin-bottom: 1.5rem;">Add New Book to Catalogue</h2>
-        
-        <form id="form-add-book">
-            <h3 style="font-size: 0.875rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 1rem;">Core Metadata</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="input-group">
-                    <label>Book Title *</label>
-                    <input type="text" id="add-title" required placeholder="e.g. The Great Gatsby">
-                </div>
-                <div class="input-group">
-                    <label>Author *</label>
-                    <input type="text" id="add-author" required placeholder="e.g. F. Scott Fitzgerald">
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-                <div class="input-group">
-                    <label>ISBN</label>
-                    <input type="text" id="add-isbn" placeholder="e.g. 9780743273565">
-                </div>
-                <div class="input-group">
-                    <label>Price (₹)</label>
-                    <input type="number" step="0.01" id="add-price" placeholder="0.00">
-                </div>
-                <div class="input-group">
-                    <label>Edition / Year</label>
-                    <input type="text" id="add-edition" placeholder="e.g. 2024 / 3rd Ed">
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="input-group">
-                    <label>Category *</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <select id="add-category" required style="flex: 1;">
-                            <option value="">Select Category</option>
-                            <!-- Options injected via JS -->
-                        </select>
-                        <button type="button" class="btn btn-outline btn-sm" onclick="promptNewEntity('Category', 'add-category')"><i data-lucide="plus"></i> New</button>
+            <form id="form-add-book">
+                <h3 style="font-size: 0.8rem; color: var(--brand-primary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.75rem;">1. Core Metadata</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+                    <div class="input-group">
+                        <label>Book Title *</label>
+                        <input type="text" id="add-title" required placeholder="e.g. Introduction to Algorithms">
+                    </div>
+                    <div class="input-group">
+                        <label>Author(s) *</label>
+                        <input type="text" id="add-author" required placeholder="e.g. Thomas H. Cormen">
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>Publisher *</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <select id="add-publisher" required style="flex: 1;">
-                            <option value="">Select Publisher</option>
-                            <!-- Options injected via JS -->
-                        </select>
-                        <button type="button" class="btn btn-outline btn-sm" onclick="promptNewEntity('Publisher', 'add-publisher')"><i data-lucide="plus"></i> New</button>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                    <div class="input-group">
+                        <label>ISBN Number</label>
+                        <input type="text" id="add-isbn" placeholder="e.g. 9780262033848">
+                    </div>
+                    <div class="input-group">
+                        <label>Price (₹)</label>
+                        <input type="number" step="0.01" id="add-price" placeholder="0.00">
+                    </div>
+                    <div class="input-group">
+                        <label>Edition / Year</label>
+                        <input type="text" id="add-edition" placeholder="e.g. 4th Edition / 2022">
                     </div>
                 </div>
-            </div>
 
-            <h3 style="font-size: 0.875rem; color: var(--text-secondary); text-transform: uppercase; margin: 1.5rem 0 1rem 0; border-top: 1px solid var(--border-color); padding-top: 1rem;">Physical Location & Copies</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-                <div class="input-group">
-                    <label>Shelf</label>
-                    <select id="add-shelf" onchange="loadRacksForShelf(this.value)">
-                        <option value="">Select Shelf...</option>
-                        <!-- Options injected via JS -->
-                    </select>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
+                    <div class="input-group">
+                        <label>Category *</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <select id="add-category" required style="flex: 1;">
+                                <option value="">Select Category...</option>
+                            </select>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="promptNewEntity('Category', 'add-category')"><i data-lucide="plus" style="width: 14px;"></i> New</button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Publisher *</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <select id="add-publisher" required style="flex: 1;">
+                                <option value="">Select Publisher...</option>
+                            </select>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="promptNewEntity('Publisher', 'add-publisher')"><i data-lucide="plus" style="width: 14px;"></i> New</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label>Rack</label>
-                    <select id="add-rack">
-                        <option value="">Select Rack...</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Number of Copies *</label>
-                    <input type="number" id="add-copies" value="1" min="1" required>
-                </div>
-            </div>
 
-            <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
-                <button type="button" class="btn btn-outline" id="btn-cancel-add">Cancel</button>
-                <button type="submit" class="btn btn-primary" id="btn-submit-book">Save Book & Generate Barcodes</button>
-            </div>
-            <div id="add-book-status" style="margin-top: 1rem; text-align: right; font-weight: 500; font-size: 0.875rem;"></div>
-        </form>
+                <div id="copies-section">
+                    <h3 style="font-size: 0.8rem; color: var(--brand-primary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin: 1.5rem 0 0.75rem 0; border-top: 1px solid var(--border-color); padding-top: 1rem;">2. Shelving Location & Physical Copies</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                        <div class="input-group">
+                            <label>Shelf Location</label>
+                            <select id="add-shelf" onchange="window.loadRacksForShelf(this.value)">
+                                <option value="">Select Shelf...</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Rack / Compartment</label>
+                            <select id="add-rack">
+                                <option value="">Select Rack...</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Number of Copies *</label>
+                            <input type="number" id="add-copies" value="1" min="1" max="100" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+                    <button type="button" class="btn btn-outline" id="btn-cancel-add">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-book"><i data-lucide="save" style="width: 16px;"></i> Save Book & Generate Copies</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
-<script>
-    // Inline script for prompt handling (can be moved to books.js)
-    function promptNewEntity(type, selectId) {
-        const name = window.prompt(`Enter new ${type} name:`);
-        if (name && name.trim() !== '') {
-            const select = document.getElementById(selectId);
-            const newOption = document.createElement('option');
-            newOption.value = 'NEW_' + name.trim(); // Prefix to catch in form submission
-            newOption.text = name.trim();
-            newOption.selected = true;
-            select.add(newOption);
-        }
-    }
-</script>
+    <!-- BOOK COPIES & BARCODES DETAIL MODAL -->
+    <div id="modal-view-copies" class="app-dialog-overlay">
+        <div class="app-dialog" style="max-width: 680px; max-height: 85vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                <div>
+                    <h3 id="copies-modal-title" style="font-size: 1.25rem; font-weight: 800; margin: 0;">Book Physical Copies</h3>
+                    <p id="copies-modal-subtitle" style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;"></p>
+                </div>
+                <button class="btn btn-ghost btn-icon" onclick="document.getElementById('modal-view-copies').classList.remove('active')"><i data-lucide="x" style="width: 18px;"></i></button>
+            </div>
+
+            <div id="copies-list-container" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+                <!-- Injected via JS -->
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button class="btn btn-outline" onclick="document.getElementById('modal-view-copies').classList.remove('active')">Close</button>
+            </div>
+        </div>
+    </div>
 
     <script>lucide.createIcons();</script>
     <script type="module" src="auth.js"></script>

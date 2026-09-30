@@ -3,56 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Premium LMS</title>
+    <title>Staff Sign In - TGI LIBRARY</title>
     <link rel="stylesheet" href="variables.css">
     <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="components.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .auth-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
+            padding: 1.5rem;
+            position: relative;
             background: var(--bg-primary);
         }
         .auth-card {
             width: 100%;
-            max-width: 400px;
+            max-width: 440px;
             padding: 2.5rem;
-            text-align: center;
+            text-align: left;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            z-index: 10;
         }
-        .auth-card h1 { margin-bottom: 0.5rem; }
-        .auth-card p { color: var(--text-secondary); margin-bottom: 2rem; }
         .error-toast { 
             color: var(--danger); 
-            background: #fef2f2; 
-            padding: 0.75rem; 
-            border-radius: var(--radius); 
-            margin-bottom: 1rem; 
+            background: var(--danger-bg); 
+            border: 1px solid var(--danger-border);
+            padding: 0.75rem 1rem; 
+            border-radius: var(--radius-sm); 
+            margin-bottom: 1.25rem; 
             display: none; 
+            font-size: 0.85rem;
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
     <div class="auth-wrapper">
-        <div class="card auth-card">
-            <h1>Welcome Back</h1>
-            <p>Sign in to the Library Management System</p>
+        <!-- Floating decorative ambient glow circles -->
+        <div style="position: absolute; width: 350px; height: 350px; border-radius: 50%; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%); top: 10%; left: 15%; filter: blur(40px); pointer-events: none;"></div>
+        <div style="position: absolute; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%); bottom: 10%; right: 15%; filter: blur(40px); pointer-events: none;"></div>
+
+        <div class="card card-glass auth-card animate-scale-in">
+            <!-- Brand Icon & Header -->
+            <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1.75rem;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--brand-gradient); color: white; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-glow-brand);">
+                    <i data-lucide="library" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div>
+                    <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0; color: var(--text-primary); letter-spacing: -0.02em;">TGI LIBRARY</h2>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin: 0;">Management System</p>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <h1 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem;">Welcome Back</h1>
+                <p style="font-size: 0.875rem; color: var(--text-secondary);">Sign in to access library circulation & catalogue management.</p>
+            </div>
             
             <div id="error-message" class="error-toast"></div>
 
             <form id="login-form">
-                <div class="input-group" style="text-align: left;">
-                    <label style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; display: block;">Email Address</label>
-                    <input type="email" id="email" required placeholder="admin@institute.edu">
+                <div class="input-group">
+                    <label>Staff Email Address</label>
+                    <div style="position: relative;">
+                        <i data-lucide="mail" style="position: absolute; left: 1rem; top: 0.85rem; color: var(--text-muted); width: 16px; height: 16px;"></i>
+                        <input type="email" id="email" required placeholder="admin@institute.edu" style="padding-left: 2.75rem;">
+                    </div>
                 </div>
-                <div class="input-group" style="text-align: left; margin-bottom: 1.5rem;">
-                    <label style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; display: block;">Password</label>
-                    <input type="password" id="password" required placeholder="••••••••">
+
+                <div class="input-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Password</span>
+                        <span id="toggle-pwd" style="font-size: 0.75rem; color: var(--brand-primary); cursor: pointer; user-select: none;">Show</span>
+                    </label>
+                    <div style="position: relative;">
+                        <i data-lucide="lock" style="position: absolute; left: 1rem; top: 0.85rem; color: var(--text-muted); width: 16px; height: 16px;"></i>
+                        <input type="password" id="password" required placeholder="••••••••" style="padding-left: 2.75rem;">
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;" id="login-btn">Sign In</button>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem;" id="login-btn">
+                    <i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Sign In
+                </button>
             </form>
+
+            <div style="margin-top: 1.75rem; border-top: 1px solid var(--border-color); padding-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                <span style="color: var(--text-muted);">Are you a student?</span>
+                <a href="student_portal.html" style="font-weight: 700; color: var(--brand-primary); display: flex; align-items: center; gap: 4px;">
+                    OPAC Portal <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+                </a>
+            </div>
         </div>
     </div>
+
+    <script>
+        lucide.createIcons();
+        const pwdInput = document.getElementById('password');
+        const toggleBtn = document.getElementById('toggle-pwd');
+        toggleBtn.addEventListener('click', () => {
+            const isPwd = pwdInput.type === 'password';
+            pwdInput.type = isPwd ? 'text' : 'password';
+            toggleBtn.innerText = isPwd ? 'Hide' : 'Show';
+        });
+    </script>
     <script type="module" src="auth.js"></script>
 </body>
 </html>
