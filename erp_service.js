@@ -19,6 +19,13 @@ const STORAGE_KEYS = {
     NOTIFICATIONS: 'erp_notifications',
     CHAT_MESSAGES: 'erp_chat_messages',
     CHAT_CHANNELS: 'erp_chat_channels',
+    READING_LOGS: 'erp_reading_logs',
+    CLASSROOM_SETS: 'erp_classroom_sets',
+    CAMPUS_TRANSFERS: 'erp_campus_transfers',
+    DAMAGE_INCIDENTS: 'erp_damage_incidents',
+    HALL_PASSES: 'erp_hall_passes',
+    WORKSTATION_POLICIES: 'erp_workstation_policies',
+    WORKSTATION_ASSIGNMENTS: 'erp_workstation_assignments',
     CURRENT_CAMPUS: 'erp_active_campus_id'
 };
 
@@ -681,8 +688,310 @@ export class ErpDataService {
         window.dispatchEvent(new CustomEvent('chatMessageSent', { detail: newMsg }));
         return newMsg;
     }
+
+    // --- ACADEMIC SCHOOL LIBRARY: SELF-SERVICE CHECKOUT & RETURN ---
+    selfCheckout(studentIdOrNfc, barcode) {
+        // Find student
+        const students = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
+        const q = studentIdOrNfc.trim().toLowerCase();
+        const student = students.find(s => 
+            s.student_id?.toLowerCase() === q || 
+            s.nfc_tag_id?.toLowerCase() === q || 
+            s.barcode?.toLowerCase() === q
+        ) || { id: 's-guest', name: 'Student Member', student_id: studentIdOrNfc };
+
+        const dueDate = new Date(Date.now() + 14 * 86400 * 1000).toISOString().split('T')[0];
+        const newLoan = {
+            id: `loan-sc-${Date.now()}`,
+            student_id: student.id,
+            student_name: student.name,
+            student_code: student.student_id,
+            barcode: barcode.trim(),
+            issue_date: new Date().toISOString().split('T')[0],
+            due_date: dueDate,
+            status: 'ACTIVE',
+            mode: 'SELF_SERVICE_KIOSK'
+        };
+
+        const loans = JSON.parse(localStorage.getItem('erp_kiosk_loans') || '[]');
+        loans.unshift(newLoan);
+        localStorage.setItem('erp_kiosk_loans', JSON.stringify(loans));
+
+        return { student, loan: newLoan, dueDate };
+    }
+
+    selfReturn(barcode) {
+        const b = barcode.trim().toUpperCase();
+        const loans = JSON.parse(localStorage.getItem('erp_kiosk_loans') || '[]');
+        const target = loans.find(l => l.barcode.toUpperCase() === b && l.status === 'ACTIVE');
+        
+        if (target) {
+            target.status = 'RETURNED';
+            target.return_date = new Date().toISOString();
+            localStorage.setItem('erp_kiosk_loans', JSON.stringify(loans));
+        }
+
+        return { barcode: b, returnedAt: new Date().toLocaleTimeString(), onTime: true };
+    }
+
+    // --- ACADEMIC READING LOGS & BADGES ---
+    getReadingLogs(studentId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.READING_LOGS) || '[]');
+        return studentId ? all.filter(r => r.student_id === studentId) : all;
+    }
+
+    logReadingSession(studentId, studentName, bookTitle, pagesRead, minutesSpent, feedback = '') {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.READING_LOGS) || '[]');
+        const log = {
+            id: `rl-${Date.now()}`,
+            student_id: studentId,
+            student_name: studentName,
+            book_title: bookTitle,
+            pages_read: parseInt(pagesRead) || 10,
+            minutes_spent: parseInt(minutesSpent) || 30,
+            feedback: feedback,
+            date: new Date().toISOString().split('T')[0]
+        };
+        list.unshift(log);
+        localStorage.setItem(STORAGE_KEYS.READING_LOGS, JSON.stringify(list));
+        return log;
+    }
+
+    // --- TEACHER CLASSROOM BOOK SETS ---
+    getClassroomSets(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.CLASSROOM_SETS) || '[]');
+        return campusId === 'ALL' ? all : all.filter(c => c.campus_id === campusId);
+    }
+
+    borrowClassroomSet(teacherId, teacherName, setTitle, copiesCount, gradeClass, dueDate) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.CLASSROOM_SETS) || '[]');
+        const setObj = {
+            id: `set-${Date.now()}`,
+            campus_id: this.activeCampusId,
+            teacher_id: teacherId,
+            teacher_name: teacherName,
+            set_title: setTitle,
+            copies_count: parseInt(copiesCount) || 30,
+            grade_class: gradeClass,
+            borrow_date: new Date().toISOString().split('T')[0],
+            due_date: dueDate || new Date(Date.now() + 60*86400*1000).toISOString().split('T')[0],
+            status: 'BORROWED_FOR_CLASS'
+        };
+        list.unshift(setObj);
+        localStorage.setItem(STORAGE_KEYS.CLASSROOM_SETS, JSON.stringify(list));
+        return setObj;
+    }
+
+    returnClassroomSet(setId) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.CLASSROOM_SETS) || '[]');
+        const target = list.find(s => s.id === setId);
+        if (target) {
+            target.status = 'RETURNED_TO_LIBRARY';
+            target.return_date = new Date().toISOString().split('T')[0];
+            localStorage.setItem(STORAGE_KEYS.CLASSROOM_SETS, JSON.stringify(list));
+        }
+        return target;
+    }
+
+    // --- INTER-CAMPUS SCHOOL BRANCH TRANSFERS ---
+    getCampusTransfers(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.CAMPUS_TRANSFERS) || '[]');
+        return campusId === 'ALL' ? all : all.filter(t => t.from_campus === campusId || t.to_campus === campusId);
+    }
+
+    createCampusTransfer(fromCampusId, toCampusId, bookTitle, quantity, requestedBy, reason = '') {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.CAMPUS_TRANSFERS) || '[]');
+        const transfer = {
+            id: `tr-${Date.now()}`,
+            from_campus: fromCampusId,
+            to_campus: toCampusId,
+            book_title: bookTitle,
+            quantity: parseInt(quantity) || 1,
+            requested_by: requestedBy,
+            reason: reason,
+            status: 'IN_TRANSIT_COURIER',
+            requested_at: new Date().toISOString()
+        };
+        list.unshift(transfer);
+        localStorage.setItem(STORAGE_KEYS.CAMPUS_TRANSFERS, JSON.stringify(list));
+        return transfer;
+    }
+
+    updateTransferStatus(transferId, status) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.CAMPUS_TRANSFERS) || '[]');
+        const t = list.find(tr => tr.id === transferId);
+        if (t) {
+            t.status = status;
+            t.updated_at = new Date().toISOString();
+            localStorage.setItem(STORAGE_KEYS.CAMPUS_TRANSFERS, JSON.stringify(list));
+        }
+        return t;
+    }
+
+    // --- DAMAGED & LOST BOOK AUDIT ---
+    getDamageIncidents(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.DAMAGE_INCIDENTS) || '[]');
+        return campusId === 'ALL' ? all : all.filter(d => d.campus_id === campusId);
+    }
+
+    reportDamageIncident(barcode, bookTitle, studentId, studentName, damageType, notes = '', resolution = 'REPLACEMENT_PENDING') {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.DAMAGE_INCIDENTS) || '[]');
+        const inc = {
+            id: `dam-${Date.now()}`,
+            campus_id: this.activeCampusId,
+            barcode: barcode,
+            book_title: bookTitle,
+            student_id: studentId,
+            student_name: studentName,
+            damage_type: damageType, // 'PAGES_TORN', 'WATER_DAMAGE', 'BINDING_BROKEN', 'LOST'
+            notes: notes,
+            resolution: resolution, // 'REPLACED_BY_STUDENT', 'FINE_RECORDED', 'REPLACEMENT_PENDING'
+            reported_at: new Date().toISOString()
+        };
+        list.unshift(inc);
+        localStorage.setItem(STORAGE_KEYS.DAMAGE_INCIDENTS, JSON.stringify(list));
+        return inc;
+    }
+
+    // --- DIGITAL HALL PASS & LIBRARY ENTRANCE VERIFICATION ---
+    getHallPasses(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.HALL_PASSES) || '[]');
+        return campusId === 'ALL' ? all : all.filter(p => p.campus_id === campusId);
+    }
+
+    issueHallPass(studentId, studentName, teacherName, originClass, reason = 'Library Research Period', durationMins = 15) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.HALL_PASSES) || '[]');
+        const departureTime = new Date();
+        const expectedArrival = new Date(departureTime.getTime() + durationMins * 60 * 1000);
+
+        const pass = {
+            id: `PASS-${Math.floor(1000 + Math.random() * 9000)}`,
+            campus_id: this.activeCampusId,
+            student_id: studentId,
+            student_name: studentName,
+            teacher_name: teacherName,
+            origin_class: originClass,
+            reason: reason,
+            duration_minutes: durationMins,
+            issued_at: departureTime.toISOString(),
+            expected_arrival_at: expectedArrival.toISOString(),
+            verified_arrival_at: null,
+            status: 'IN_TRANSIT', // 'IN_TRANSIT', 'ARRIVED_ON_TIME', 'LATE_ARRIVAL', 'EXPIRED'
+            flagged_truant: false
+        };
+
+        list.unshift(pass);
+        localStorage.setItem(STORAGE_KEYS.HALL_PASSES, JSON.stringify(list));
+        return pass;
+    }
+
+    verifyHallPassArrival(passIdOrStudentId) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.HALL_PASSES) || '[]');
+        const q = passIdOrStudentId.trim().toLowerCase();
+        
+        // Find active pass in transit for this student
+        const pass = list.find(p => 
+            p.status === 'IN_TRANSIT' && 
+            (p.id.toLowerCase() === q || p.student_id.toLowerCase() === q || p.student_name.toLowerCase().includes(q))
+        );
+
+        if (!pass) {
+            throw new Error(`No active in-transit Hall Pass found for "${passIdOrStudentId}". Student may not have exit permission.`);
+        }
+
+        const arrivalTime = new Date();
+        const expected = new Date(pass.expected_arrival_at);
+        const isLate = arrivalTime > expected;
+
+        pass.verified_arrival_at = arrivalTime.toISOString();
+        pass.status = isLate ? 'LATE_ARRIVAL' : 'ARRIVED_ON_TIME';
+        pass.flagged_truant = isLate;
+
+        localStorage.setItem(STORAGE_KEYS.HALL_PASSES, JSON.stringify(list));
+        return pass;
+    }
+
+    // --- WINDOWS COMPUTER LAB WORKSTATION CLASSROOM LOCK & FOCUS POLICY ---
+    getWorkstationPolicy() {
+        const defaultPolicy = {
+            active_period_id: 'per-2',
+            period_name: 'Period 5 (01:30 PM - 02:30 PM) - Practical Coding & Spreadsheet Lab',
+            class_name: 'CS-B 2026',
+            teacher_name: 'Prof. Ananya Roy',
+            allowed_mode: 'EXCEL_ONLY', // 'EXCEL_ONLY', 'PYTHON_CODING', 'RESEARCH_BROWSER', 'EXAM_LOCKDOWN', 'UNRESTRICTED'
+            allowed_apps: ['Microsoft Excel', 'Google Sheets Calc', 'Institutional ERP'],
+            blocked_apps: ['Social Media', 'Games', 'YouTube', 'Chat Apps', 'External USB Drives'],
+            lock_active: true,
+            strict_student_assignment: true
+        };
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.WORKSTATION_POLICIES) || JSON.stringify(defaultPolicy));
+    }
+
+    setWorkstationPolicy(policy) {
+        localStorage.setItem(STORAGE_KEYS.WORKSTATION_POLICIES, JSON.stringify(policy));
+        window.dispatchEvent(new CustomEvent('workstationPolicyChanged', { detail: policy }));
+        return policy;
+    }
+
+    getWorkstationAssignments() {
+        const defaultAssignments = [
+            { machine_code: 'DL-PC-01', student_id: 'REG-2026-001', student_name: 'Alexander Pierce', class_name: 'CS-B 2026' },
+            { machine_code: 'DL-PC-02', student_id: 'REG-2026-002', student_name: 'Sophia Bennett', class_name: 'CS-B 2026' },
+            { machine_code: 'DL-PC-03', student_id: 'REG-2026-003', student_name: 'Liam Zhang', class_name: 'CS-B 2026' },
+            { machine_code: 'DL-PC-04', student_id: 'REG-2026-004', student_name: 'Emma Watson', class_name: 'CS-B 2026' },
+            { machine_code: 'HPC-PC-01', student_id: 'REG-2026-005', student_name: 'Noah Miller', class_name: 'CS-B 2026' }
+        ];
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.WORKSTATION_ASSIGNMENTS) || JSON.stringify(defaultAssignments));
+    }
+
+    assignStudentToMachine(machineCode, studentId, studentName, className = 'CS-B 2026') {
+        const list = this.getWorkstationAssignments();
+        let item = list.find(a => a.machine_code === machineCode);
+        if (item) {
+            item.student_id = studentId;
+            item.student_name = studentName;
+            item.class_name = className;
+        } else {
+            list.push({ machine_code: machineCode, student_id: studentId, student_name: studentName, class_name: className });
+        }
+        localStorage.setItem(STORAGE_KEYS.WORKSTATION_ASSIGNMENTS, JSON.stringify(list));
+    }
+
+    validateWorkstationLogin(machineCode, username, password) {
+        const policy = this.getWorkstationPolicy();
+        const assignments = this.getWorkstationAssignments();
+        const u = (username || '').trim().toLowerCase();
+
+        // 1. Check if login matches assigned student if strict assignment is enabled
+        if (policy.strict_student_assignment) {
+            const assignment = assignments.find(a => a.machine_code.toLowerCase() === machineCode.toLowerCase());
+            if (!assignment) {
+                throw new Error(`Workstation "${machineCode}" is not registered in current classroom schedule.`);
+            }
+
+            const matchesAssigned = assignment.student_id.toLowerCase() === u || assignment.student_name.toLowerCase().includes(u);
+            if (!matchesAssigned) {
+                throw new Error(`ACCESS DENIED: Machine ${machineCode} is reserved exclusively for "${assignment.student_name} (${assignment.student_id})" during ${policy.period_name}.`);
+            }
+        }
+
+        // 2. Authenticate session & check in computer
+        const assignment = assignments.find(a => a.machine_code.toLowerCase() === machineCode.toLowerCase()) || { student_name: username, student_id: username };
+        const res = this.checkInComputer(machineCode, assignment.student_id, assignment.student_name, `${policy.period_name} [${policy.allowed_mode}]`);
+
+        return {
+            authenticated: true,
+            student_id: assignment.student_id,
+            student_name: assignment.student_name,
+            machine_code: machineCode,
+            policy: policy,
+            session: res.session
+        };
+    }
 }
 
 export const erp = new ErpDataService();
 window.erp = erp;
+
+
 
