@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient.js';
 import { erp } from './erp_service.js';
 import { hardware } from './hardware.js';
+import { shortcuts } from './shortcuts.js';
 
 // Global UI state
 let cmdOverlay = null;
@@ -67,7 +68,35 @@ function updateThemeIcon(theme) {
     }
 }
 
-// --- LIVE CLOCK ---
+// --- LIVE CLOCK & ACADEMIC SCHEDULE ---
+function getAcademicPeriodStatus() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const totalMin = hours * 60 + minutes;
+
+    if (totalMin < 8 * 60 + 30) return "Morning Prep • Library Open";
+    if (totalMin < 9 * 60 + 15) return "Period 1 • 08:30 - 09:15";
+    if (totalMin < 10 * 60) return "Period 2 • 09:15 - 10:00";
+    if (totalMin < 10 * 60 + 15) return "Morning Recess • Break";
+    if (totalMin < 11 * 60) return "Period 3 • 10:15 - 11:00";
+    if (totalMin < 11 * 60 + 45) return "Period 4 • 11:00 - 11:45";
+    if (totalMin < 12 * 60 + 30) return "Midday Lunch Recess";
+    if (totalMin < 13 * 60 + 15) return "Period 5 • 12:30 - 01:15";
+    if (totalMin < 14 * 60) return "Period 6 • 01:15 - 02:00";
+    if (totalMin < 14 * 60 + 45) return "Period 7 • 02:00 - 02:45";
+    if (totalMin < 15 * 60 + 30) return "Period 8 • 02:45 - 03:30";
+    return "After-Hours • Open Research Lab";
+}
+
+function closeAllTopbarPopovers(exceptElement = null) {
+    document.querySelectorAll('.topbar-popover').forEach(pop => {
+        if (pop !== exceptElement) {
+            pop.classList.remove('active');
+        }
+    });
+}
+
 function startLiveClock() {
     const clockEl = document.getElementById('topbar-clock');
     if (!clockEl) return;
@@ -111,6 +140,9 @@ function renderDefaultPaletteItems() {
         <div class="cmd-item" onclick="window.location.href='computers.html'"><i data-lucide="monitor"></i> <div><div style="font-weight: 600;">Computer Lab Workstation Tracker</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Machine codes, user time analytics (day/week/month)</div></div></div>
         <div class="cmd-item" onclick="window.location.href='attendance.html'"><i data-lucide="calendar-check"></i> <div><div style="font-weight: 600;">Class Period & Lab Attendance</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Teacher roll call & smart NFC period check-in</div></div></div>
         <div class="cmd-item" onclick="window.location.href='events.html'"><i data-lucide="ticket"></i> <div><div style="font-weight: 600;">Event Halls & Auditorium Bookings</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Schedule events, conductor tickets & attendee scanner</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='workstation_agent.html'"><i data-lucide="lock"></i> <div><div style="font-weight: 600;">PC Classroom Locker & Focus Kiosk</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Single-student login verification & allowed app whitelist</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='hallpass.html'"><i data-lucide="footprints"></i> <div><div style="font-weight: 600;">Entrance Verification & Hall Passes</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Track student arrival times & prevent hallway wandering</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='audio_station.html'"><i data-lucide="volume-2"></i> <div><div style="font-weight: 600;">Read-Aloud & Accessibility Audio Station</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Natural speech synthesizer & karaoke sentence highlighter</div></div></div>
         <div class="cmd-item" onclick="window.location.href='campus_portal.html'"><i data-lucide="shield-check"></i> <div><div style="font-weight: 600;">Campus Heads & Dean Portal</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Facility requests, approvals & executive oversight</div></div></div>
         <div class="cmd-item" onclick="window.location.href='reports.html'"><i data-lucide="bar-chart-3"></i> <div><div style="font-weight: 600;">Dynamic Report Engine</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Cross-campus analytics, computer logs, attendance & PDF export</div></div></div>
         <div class="cmd-item" onclick="window.location.href='access_control.html'"><i data-lucide="lock"></i> <div><div style="font-weight: 600;">Access Control & RBAC Matrix</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Manage granular role permissions and data governance</div></div></div>
@@ -470,17 +502,59 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
                 }
 
-                // NFC Scan Topbar Button
-                document.getElementById('btn-nfc-tap-topbar')?.addEventListener('click', async () => {
-                    window.app.toast("Scanning for NFC Smartcards / Badges...", "info", "NFC Reader Active", 3000);
-                    await hardware.startNfcScan(
-                        (payload) => {
-                            window.app.toast(`NFC Badge Identified: ${payload}`, "success", "NFC Authenticated");
-                        },
-                        (err) => {
-                            window.app.toast(err.message, "warning", "NFC Terminal");
-                        }
-                    );
+                // Dynamic Academic Period Status
+                const periodPill = document.getElementById('topbar-period-pill');
+                if (periodPill) {
+                    const updatePeriod = () => {
+                        periodPill.innerText = getAcademicPeriodStatus();
+                    };
+                    updatePeriod();
+                    setInterval(updatePeriod, 60000);
+                }
+
+                // Quick Action Popover Toggle
+                const quickActionBtn = document.getElementById('btn-quick-create-menu');
+                const quickActionPopover = document.getElementById('popover-quick-actions');
+                quickActionBtn?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeAllTopbarPopovers(quickActionPopover);
+                    quickActionPopover?.classList.toggle('active');
+                });
+
+                // Hardware Diagnostic Popover Toggle
+                const hardwareStatusBtn = document.getElementById('btn-nfc-tap-topbar');
+                const hardwareDiagPopover = document.getElementById('popover-hardware-diag');
+                hardwareStatusBtn?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeAllTopbarPopovers(hardwareDiagPopover);
+                    hardwareDiagPopover?.classList.toggle('active');
+                });
+
+                // User Profile Menu Popover Toggle
+                const userProfileBtn = document.getElementById('topbar-user-profile-btn');
+                const userProfilePopover = document.getElementById('popover-user-profile');
+                userProfileBtn?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeAllTopbarPopovers(userProfilePopover);
+                    userProfilePopover?.classList.toggle('active');
+                });
+
+                // Close popovers on click outside
+                document.addEventListener('click', () => {
+                    closeAllTopbarPopovers();
+                });
+
+                // Fullscreen Toggle
+                const fullscreenBtn = document.getElementById('btn-fullscreen-toggle');
+                fullscreenBtn?.addEventListener('click', () => {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                        fullscreenBtn.innerHTML = `<i data-lucide="minimize" style="width: 16px; height: 16px;"></i>`;
+                    } else {
+                        document.exitFullscreen().catch(() => {});
+                        fullscreenBtn.innerHTML = `<i data-lucide="maximize" style="width: 16px; height: 16px;"></i>`;
+                    }
+                    if (window.lucide) lucide.createIcons();
                 });
 
                 // Mobile Menu Toggle
@@ -761,7 +835,8 @@ function updateNotificationBadges() {
     const statusText = document.getElementById('notif-unread-status');
 
     if (topbarBadge) {
-        topbarBadge.style.display = unreadCount > 0 ? 'block' : 'none';
+        topbarBadge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+        topbarBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
     }
     if (statusText) {
         statusText.innerText = `${unreadCount} unread alert${unreadCount === 1 ? '' : 's'}`;

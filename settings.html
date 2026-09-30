@@ -27,6 +27,42 @@
             background: var(--bg-muted);
             color: var(--text-primary);
         }
+
+        .shortcut-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 0.85rem;
+        }
+
+        .shortcut-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.75rem;
+            transition: all var(--transition-fast);
+        }
+
+        .shortcut-card:hover {
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        }
+
+        .key-recorder-active {
+            border-color: var(--brand-primary) !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+            background: rgba(59, 130, 246, 0.04) !important;
+            animation: pulse-border 1.5s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { border-color: rgba(59, 130, 246, 0.4); }
+            50% { border-color: rgba(59, 130, 246, 1); }
+            100% { border-color: rgba(59, 130, 246, 0.4); }
+        }
     </style>
 </head>
 <body>
@@ -40,14 +76,14 @@
             
             <main class="main-content">
                 <!-- Page Header -->
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
                     <div>
                         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
                             <span class="badge badge-brand" style="font-size: 0.7rem;">CONFIGURATION</span>
                             <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Rules & Master Entities</span>
                         </div>
                         <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.03em;">System Settings</h1>
-                        <p style="color: var(--text-secondary); font-size: 0.95rem;">Configure circulation rules, fine policies, and academic & shelving hierarchies.</p>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem;">Configure circulation policies, institutional campuses, hierarchies, and custom keyboard hotkeys.</p>
                     </div>
                 </div>
 
@@ -56,6 +92,7 @@
                     <button class="tab-btn active" data-target="panel-general">Circulation Rules</button>
                     <button class="tab-btn" data-target="panel-campuses">Institutional Campuses</button>
                     <button class="tab-btn" data-target="panel-master-data">Master Data Hierarchy</button>
+                    <button class="tab-btn" data-target="panel-shortcuts"><i data-lucide="keyboard" style="width: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> Keyboard Hotkeys & Hardware</button>
                 </div>
 
                 <!-- PANEL 1: GENERAL SETTINGS -->
@@ -159,13 +196,90 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- PANEL 4: KEYBOARD SHORTCUTS & HARDWARE KEYBINDINGS -->
+                <div id="panel-shortcuts" class="card card-glass tab-panel" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                        <div>
+                            <h2 style="font-size: 1.2rem; font-weight: 800; margin: 0;">Keyboard Shortcuts & Hardware Keybindings</h2>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.25rem 0 0 0;">Assign custom hotkeys for fast desk navigation, hardware scan triggers, and circulation workflows.</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-outline btn-sm" id="btn-reset-shortcuts">
+                                <i data-lucide="rotate-ccw" style="width: 14px;"></i> Reset Defaults
+                            </button>
+                            <button class="btn btn-primary btn-sm" onclick="window.shortcuts.showHelpModal()">
+                                <i data-lucide="help-circle" style="width: 14px;"></i> View Cheat Sheet (<kbd>?</kbd>)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Hardware Scanner Live Diagnostic Test Pad -->
+                    <div style="background: linear-gradient(135deg, rgba(59,130,246,0.06) 0%, rgba(139,92,246,0.06) 100%); border: 1px solid rgba(59,130,246,0.2); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div style="width: 28px; height: 28px; border-radius: 6px; background: var(--brand-primary); color: white; display: flex; align-items: center; justify-content: center;">
+                                    <i data-lucide="scan" style="width: 16px; height: 16px;"></i>
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800;">Hardware Scanner Live Test Pad</h4>
+                                    <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary);">Point USB/Bluetooth barcode gun or tap NFC smartcard to test rapid classification</p>
+                                </div>
+                            </div>
+                            <span class="badge badge-success" style="font-size: 0.7rem;"><i data-lucide="check" style="width: 12px; height: 12px; display: inline-block;"></i> Auto-Detection Active</span>
+                        </div>
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <input type="text" id="scanner-test-input" placeholder="Scan barcode or NFC here to test latency and classification..." style="flex: 1; padding: 0.65rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-primary); font-family: var(--font-mono); font-size: 0.85rem;">
+                            <button class="btn btn-outline" id="btn-test-nfc-tap" title="Simulate Web NFC Tag"><i data-lucide="radio" style="width: 16px;"></i> Test NFC</button>
+                        </div>
+                        <div id="scanner-test-result" style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-secondary); display: none;">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Category Tabs for Hotkeys -->
+                    <div style="display: flex; gap: 0.35rem; margin-bottom: 1rem; overflow-x: auto;" id="shortcut-category-filters">
+                        <button class="btn btn-primary btn-sm shortcut-filter-btn" data-cat="ALL">All Categories</button>
+                        <button class="btn btn-outline btn-sm shortcut-filter-btn" data-cat="Navigation">Navigation</button>
+                        <button class="btn btn-outline btn-sm shortcut-filter-btn" data-cat="Circulation">Circulation</button>
+                        <button class="btn btn-outline btn-sm shortcut-filter-btn" data-cat="Hardware">Hardware</button>
+                        <button class="btn btn-outline btn-sm shortcut-filter-btn" data-cat="General">General</button>
+                        <button class="btn btn-outline btn-sm shortcut-filter-btn" data-cat="Modules">Modules</button>
+                    </div>
+
+                    <!-- Shortcut Cards List -->
+                    <div id="shortcuts-grid-container" class="shortcut-grid">
+                        <!-- Injected dynamically -->
+                    </div>
+                </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Rebind Key Recording Modal -->
+    <div id="modal-rebind-recorder" class="app-dialog-overlay">
+        <div class="app-dialog" style="max-width: 440px; text-align: center;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(59,130,246,0.1); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;">
+                <i data-lucide="keyboard" style="width: 28px; height: 28px;"></i>
+            </div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0 0 0.25rem 0;" id="recorder-action-name">Assign Key Combination</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 1.5rem 0;">Press any combination of keys on your keyboard (e.g. <kbd>Ctrl+B</kbd>, <kbd>F4</kbd>, <kbd>Alt+Shift+X</kbd>).</p>
+            
+            <div id="recorder-captured-box" style="padding: 1.25rem; background: var(--bg-muted); border: 2px dashed var(--brand-primary); border-radius: var(--radius-md); font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--brand-primary); min-height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                Listening for keys...
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-outline" style="flex: 1;" id="btn-cancel-recording">Cancel</button>
+                <button class="btn btn-primary" style="flex: 1;" id="btn-confirm-recording" disabled>Save Shortcut</button>
+            </div>
         </div>
     </div>
 
     <script>lucide.createIcons();</script>
     <script type="module" src="auth.js"></script>
     <script type="module" src="ui.js"></script>
+    <script type="module" src="shortcuts.js"></script>
     <script type="module" src="settings.js"></script>
 </body>
 </html>
