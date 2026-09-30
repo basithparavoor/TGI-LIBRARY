@@ -98,11 +98,16 @@ function closeAllTopbarPopovers(exceptElement = null) {
 }
 
 function startLiveClock() {
-    const clockEl = document.getElementById('topbar-clock');
-    if (!clockEl) return;
     const updateTime = () => {
-        const now = new Date();
-        clockEl.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const timeEl = document.getElementById('topbar-clock-time');
+        const clockContainer = document.getElementById('topbar-clock');
+        if (timeEl) {
+            const now = new Date();
+            timeEl.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        } else if (clockContainer) {
+            const now = new Date();
+            clockContainer.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
     };
     updateTime();
     setInterval(updateTime, 1000);

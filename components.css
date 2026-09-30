@@ -850,18 +850,145 @@ tbody tr:hover {
 }
 
 /* ==========================================================================
-   TOPBAR ENHANCEMENTS, POPOVERS & HARDWARE STATUS
+   ULTRA-PREMIUM TOPBAR & CONTROLS DESIGN SYSTEM
    ========================================================================== */
+.app-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+    background: var(--bg-glass-strong);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    height: var(--topbar-height);
+    transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.topbar-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+}
+
+.topbar-btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    background: var(--bg-muted);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.topbar-btn-icon:hover {
+    color: var(--brand-primary);
+    background: var(--bg-surface);
+    border-color: var(--brand-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.topbar-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+    margin: 0 0.2rem;
+    flex-shrink: 0;
+}
+
+.topbar-search-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.45rem 0.95rem;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-xs);
+    width: 320px;
+    max-width: 100%;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.topbar-search-box:hover {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.topbar-campus-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: var(--bg-muted);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    padding: 0.3rem 0.75rem;
+    transition: all var(--transition-fast);
+}
+
+.topbar-campus-chip:hover {
+    background: var(--bg-surface);
+    border-color: var(--brand-primary);
+}
+
+.topbar-clock-box {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-muted);
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    font-family: var(--font-mono);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.topbar-profile-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.25rem 0.75rem 0.25rem 0.3rem;
+    border-radius: var(--radius-full);
+    background: var(--bg-muted);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    user-select: none;
+}
+
+.topbar-profile-chip:hover {
+    background: var(--bg-surface);
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-sm);
+}
+
 .topbar-popover {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 10px);
     right: 0;
     width: 290px;
     background: var(--bg-card);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xl);
     z-index: 1000;
     display: none;
@@ -885,35 +1012,16 @@ tbody tr:hover {
     }
 }
 
-.topbar-pill {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: var(--bg-muted);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-full);
-    padding: 0.3rem 0.75rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    transition: all var(--transition-fast);
-}
-
-.topbar-pill:hover {
-    background: var(--bg-surface);
-    border-color: var(--brand-primary);
-}
-
 .topbar-badge-counter {
     position: absolute;
-    top: -2px;
-    right: -2px;
+    top: -3px;
+    right: -3px;
     background: var(--color-danger);
     color: white;
-    font-size: 0.62rem;
+    font-size: 0.65rem;
     font-weight: 800;
-    min-width: 17px;
-    height: 17px;
+    min-width: 18px;
+    height: 18px;
     border-radius: 9px;
     display: flex;
     align-items: center;
@@ -931,13 +1039,14 @@ tbody tr:hover {
 }
 
 .pulse-dot {
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--color-success);
     display: inline-block;
     box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
     animation: pulseDot 2s infinite;
+    flex-shrink: 0;
 }
 
 @keyframes pulseDot {
@@ -949,8 +1058,8 @@ tbody tr:hover {
 .popover-item {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
-    padding: 0.65rem 1rem;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
     color: var(--text-primary);
     font-size: 0.85rem;
     font-weight: 500;
