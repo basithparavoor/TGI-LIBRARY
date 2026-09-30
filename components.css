@@ -679,3 +679,172 @@ tbody tr:hover {
         gap: 1rem;
     }
 }
+
+/* ==========================================================================
+   NOTIFICATION DRAWER & NOTIFICATION CENTER
+   ========================================================================== */
+.notification-drawer-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.notification-drawer-backdrop.active {
+    display: block;
+    opacity: 1;
+}
+
+.notification-drawer {
+    position: fixed;
+    top: 0;
+    right: -420px;
+    width: 400px;
+    max-width: 92vw;
+    height: 100vh;
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-left: 1px solid var(--border-color);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.25);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    transition: right var(--transition-normal) cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notification-drawer.active {
+    right: 0;
+}
+
+.notification-item {
+    display: flex;
+    gap: 0.85rem;
+    padding: 0.95rem 1.15rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background var(--transition-fast);
+    cursor: pointer;
+    position: relative;
+}
+
+.notification-item:hover {
+    background: var(--bg-hover);
+}
+
+.notification-item.unread {
+    background: rgba(59, 130, 246, 0.04);
+}
+
+.notification-item.unread::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--brand-primary);
+}
+
+/* ==========================================================================
+   PREMIUM ADMIN MESSENGER & HELPDESK
+   ========================================================================== */
+.floating-messenger-btn {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--brand-gradient);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px var(--brand-glow), 0 4px 12px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    z-index: 950;
+    transition: transform var(--transition-bounce), box-shadow var(--transition-normal);
+}
+
+.floating-messenger-btn:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 12px 28px var(--brand-glow), 0 6px 16px rgba(0,0,0,0.3);
+}
+
+.messenger-window {
+    position: fixed;
+    bottom: 5.5rem;
+    right: 1.5rem;
+    width: 380px;
+    max-width: 92vw;
+    height: 540px;
+    max-height: 80vh;
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    z-index: 950;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(20px) scale(0.96);
+    opacity: 0;
+    transition: all var(--transition-bounce);
+}
+
+.messenger-window.active {
+    display: flex;
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.chat-bubble-incoming {
+    align-self: flex-start;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 14px 14px 14px 2px;
+    padding: 0.65rem 0.95rem;
+    max-width: 82%;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    box-shadow: var(--shadow-xs);
+}
+
+.chat-bubble-outgoing {
+    align-self: flex-end;
+    background: var(--brand-gradient);
+    color: white;
+    border-radius: 14px 14px 2px 14px;
+    padding: 0.65rem 0.95rem;
+    max-width: 82%;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    box-shadow: 0 2px 8px var(--brand-glow);
+}
+
+.typing-dot {
+    width: 5px;
+    height: 5px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    animation: typingBounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typingBounce {
+    0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+    40% { transform: scale(1); opacity: 1; }
+}

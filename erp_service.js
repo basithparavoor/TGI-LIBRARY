@@ -1,0 +1,688 @@
+// erp_service.js - Central Institutional ERP & Facility Management Service
+import { supabase } from './supabaseClient.js';
+
+// Local storage keys for resilient ERP data persistence & offline fallback
+const STORAGE_KEYS = {
+    CAMPUSES: 'erp_campuses',
+    DEPARTMENTS: 'erp_departments',
+    CLASSES: 'erp_classes',
+    STAFF: 'erp_staff',
+    STUDENTS: 'erp_students',
+    COMPUTERS: 'erp_computers',
+    COMPUTER_SESSIONS: 'erp_computer_sessions',
+    PERIOD_SESSIONS: 'erp_period_sessions',
+    PERIOD_ATTENDANCE: 'erp_period_attendance',
+    EVENT_HALLS: 'erp_event_halls',
+    EVENTS: 'erp_events',
+    FACILITY_REQUESTS: 'erp_facility_requests',
+    PERMISSIONS: 'erp_permissions',
+    NOTIFICATIONS: 'erp_notifications',
+    CHAT_MESSAGES: 'erp_chat_messages',
+    CHAT_CHANNELS: 'erp_chat_channels',
+    CURRENT_CAMPUS: 'erp_active_campus_id'
+};
+
+// Seed initial multi-campus institutional data if not present
+function seedInitialErpData() {
+    if (!localStorage.getItem(STORAGE_KEYS.CAMPUSES)) {
+        const initialCampuses = [
+            { id: 'camp-main', name: 'Main Metropolitan Campus', code: 'MMC', city: 'Bangalore', head_name: 'Dr. Arthur Pendelton', email: 'dean.main@tgi.edu', phone: '+91 80 2345 6701' },
+            { id: 'camp-tech', name: 'Technology & Engineering Campus', code: 'TEC', city: 'Whitefield', head_name: 'Prof. Evelyn Reed', email: 'dean.tech@tgi.edu', phone: '+91 80 4123 8900' },
+            { id: 'camp-north', name: 'North Sub-Campus (Life Sciences)', code: 'NSC', city: 'Yelahanka', head_name: 'Dr. Rajiv Menon', email: 'dean.north@tgi.edu', phone: '+91 80 6789 1234' }
+        ];
+        localStorage.setItem(STORAGE_KEYS.CAMPUSES, JSON.stringify(initialCampuses));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) {
+        const initialNotifs = [
+            { id: 'notif-1', campus_id: 'camp-main', title: 'New Facility Request', message: 'Dr. Robert Oppenheim requested Computer Lab for End-Semester Practical Assessment.', type: 'APPROVAL', unread: true, timestamp: new Date(Date.now() - 10*60*1000).toISOString(), link: 'campus_portal.html' },
+            { id: 'notif-2', campus_id: 'camp-main', title: 'Overdue Book Warning', message: 'Alexander Pierce has 1 loan overdue for "Clean Code". Fine accrued: $15.00.', type: 'OVERDUE', unread: true, timestamp: new Date(Date.now() - 45*60*1000).toISOString(), link: 'reports.html' },
+            { id: 'notif-3', campus_id: 'camp-main', title: 'Upcoming Symposium', message: 'Annual International Tech Symposium 2026 starts in 2 days. 412 seats registered.', type: 'EVENT', unread: true, timestamp: new Date(Date.now() - 2*3600*1000).toISOString(), link: 'events.html' },
+            { id: 'notif-4', campus_id: 'ALL', title: 'Institutional Broadcast', message: 'Extended campus library & lab research hours active during examination month (8:00 AM - 10:00 PM).', type: 'BROADCAST', unread: false, timestamp: new Date(Date.now() - 24*3600*1000).toISOString(), link: 'dashboard' }
+        ];
+        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(initialNotifs));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.CHAT_CHANNELS)) {
+        const initialChannels = [
+            { id: 'ch-admin', name: 'Executive Admin & Helpdesk', description: 'Direct desk with Super Admin & Campus Deans', role: 'ADMIN', avatar: 'shield', unread: 1, last_message: 'Your lab terminal request is approved.', last_time: new Date(Date.now() - 5*60*1000).toISOString() },
+            { id: 'ch-library', name: 'Chief Librarian Desk', description: 'Book renewals, shelf reservations & catalog queries', role: 'LIBRARIAN', avatar: 'book-open', unread: 0, last_message: 'The requested book is held at Counter 2.', last_time: new Date(Date.now() - 2*3600*1000).toISOString() },
+            { id: 'ch-lab', name: 'Lab Hardware Support', description: 'Workstation issues, software licenses & GPU access', role: 'LAB_ADMIN', avatar: 'monitor', unread: 0, last_message: 'Terminal DL-PC-01 credentials reset.', last_time: new Date(Date.now() - 24*3600*1000).toISOString() }
+        ];
+        localStorage.setItem(STORAGE_KEYS.CHAT_CHANNELS, JSON.stringify(initialChannels));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES)) {
+        const initialMessages = [
+            { id: 'msg-1', channel_id: 'ch-admin', sender_id: 'REG-2026-001', sender_name: 'Alexander Pierce', sender_role: 'STUDENT', text: 'Hello Admin, I need an extension for my research session on DL-PC-02 for an IEEE submission.', is_outgoing: false, timestamp: new Date(Date.now() - 15*60*1000).toISOString() },
+            { id: 'msg-2', channel_id: 'ch-admin', sender_id: 'ADM-001', sender_name: 'Dean Arthur Pendelton', sender_role: 'ADMIN', text: 'Hi Alexander, 60 minutes research extension granted on terminal DL-PC-02. Please ensure attendance is logged.', is_outgoing: true, timestamp: new Date(Date.now() - 5*60*1000).toISOString() }
+        ];
+        localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(initialMessages));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.EVENT_HALLS)) {
+        const initialHalls = [
+            { id: 'hall-1', campus_id: 'camp-main', name: 'Dr. APJ Abdul Kalam Auditorium', hall_code: 'AUD-MMC-01', capacity: 650, location: 'Central Block, 3rd Floor', amenities: '4K Projector, Surround Sound, Stage Lights, Live Streaming', status: 'AVAILABLE' },
+            { id: 'hall-2', campus_id: 'camp-main', name: 'Sir CV Raman Seminar Hall', hall_code: 'SEM-MMC-02', capacity: 180, location: 'Academic Wing B', amenities: 'Dual Displays, Wireless Mics, Video Conferencing', status: 'AVAILABLE' },
+            { id: 'hall-3', campus_id: 'camp-tech', name: 'Turing Digital Innovation Amphitheatre', hall_code: 'AMP-TEC-01', capacity: 400, location: 'Tech Tower, 1st Floor', amenities: 'Interactive Smart Board, Acoustic Paneling, Hybrid Setup', status: 'AVAILABLE' }
+        ];
+        localStorage.setItem(STORAGE_KEYS.EVENT_HALLS, JSON.stringify(initialHalls));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.COMPUTERS)) {
+        const initialComputers = [
+            // Main Campus Lab 1
+            { id: 'comp-1', campus_id: 'camp-main', lab_name: 'Digital Library & Research Lab', machine_code: 'DL-PC-01', ip_address: '192.168.10.101', specs: 'Intel i7, 32GB RAM, 1TB SSD, 4K Display', status: 'AVAILABLE' },
+            { id: 'comp-2', campus_id: 'camp-main', lab_name: 'Digital Library & Research Lab', machine_code: 'DL-PC-02', ip_address: '192.168.10.102', specs: 'Intel i7, 32GB RAM, 1TB SSD, 4K Display', status: 'IN_USE', current_user_name: 'Alexander Pierce', current_user_id: 'REG-2026-001', session_start: new Date(Date.now() - 45*60*1000).toISOString() },
+            { id: 'comp-3', campus_id: 'camp-main', lab_name: 'Digital Library & Research Lab', machine_code: 'DL-PC-03', ip_address: '192.168.10.103', specs: 'Intel i5, 16GB RAM, 512GB SSD', status: 'AVAILABLE' },
+            { id: 'comp-4', campus_id: 'camp-main', lab_name: 'Digital Library & Research Lab', machine_code: 'DL-PC-04', ip_address: '192.168.10.104', specs: 'Intel i5, 16GB RAM, 512GB SSD', status: 'MAINTENANCE' },
+            // Tech Campus AI Lab
+            { id: 'comp-5', campus_id: 'camp-tech', lab_name: 'High-Performance Computing Lab', machine_code: 'HPC-PC-01', ip_address: '10.20.1.50', specs: 'AMD Ryzen 9, RTX 4080 GPU, 64GB RAM', status: 'AVAILABLE' },
+            { id: 'comp-6', campus_id: 'camp-tech', lab_name: 'High-Performance Computing Lab', machine_code: 'HPC-PC-02', ip_address: '10.20.1.51', specs: 'AMD Ryzen 9, RTX 4080 GPU, 64GB RAM', status: 'AVAILABLE' }
+        ];
+        localStorage.setItem(STORAGE_KEYS.COMPUTERS, JSON.stringify(initialComputers));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.STAFF)) {
+        const initialStaff = [
+            { id: 'staff-1', campus_id: 'camp-main', department_id: 'dept-cs', employee_id: 'FAC-001', name: 'Dr. Robert Oppenheim', designation: 'Professor & Head of Dept', email: 'robert.o@tgi.edu', phone: '+91 98450 11223', role: 'TEACHER', nfc_tag_id: 'NFC-FAC-001', qr_code: 'QR-FAC-001', status: 'ACTIVE' },
+            { id: 'staff-2', campus_id: 'camp-main', department_id: 'dept-lib', employee_id: 'LIB-001', name: 'Claire Dupont', designation: 'Chief Librarian', email: 'claire.d@tgi.edu', phone: '+91 98450 33445', role: 'LIBRARIAN', nfc_tag_id: 'NFC-LIB-001', qr_code: 'QR-LIB-001', status: 'ACTIVE' },
+            { id: 'staff-3', campus_id: 'camp-main', department_id: 'dept-admin', employee_id: 'ADM-001', name: 'Dr. Arthur Pendelton', designation: 'Executive Campus Head', email: 'dean.main@tgi.edu', phone: '+91 98450 55667', role: 'CAMPUS_HEAD', nfc_tag_id: 'NFC-ADM-001', qr_code: 'QR-ADM-001', status: 'ACTIVE' },
+            { id: 'staff-4', campus_id: 'camp-tech', department_id: 'dept-lab', employee_id: 'LAB-001', name: 'Marcus Vance', designation: 'Senior Lab Administrator', email: 'marcus.v@tgi.edu', phone: '+91 98450 77889', role: 'LAB_ADMIN', nfc_tag_id: 'NFC-LAB-001', qr_code: 'QR-LAB-001', status: 'ACTIVE' }
+        ];
+        localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(initialStaff));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.COMPUTER_SESSIONS)) {
+        const sampleSessions = [
+            { id: 'cs-1', computer_id: 'comp-1', machine_code: 'DL-PC-01', campus_id: 'camp-main', student_name: 'Alexander Pierce', student_id: 'REG-2026-001', start_time: new Date(Date.now() - 3*3600*1000).toISOString(), end_time: new Date(Date.now() - 1.5*3600*1000).toISOString(), duration_minutes: 90, purpose: 'IEEE Journal Research', status: 'COMPLETED' },
+            { id: 'cs-2', computer_id: 'comp-3', machine_code: 'DL-PC-03', campus_id: 'camp-main', student_name: 'Sophia Bennett', student_id: 'REG-2026-002', start_time: new Date(Date.now() - 5*3600*1000).toISOString(), end_time: new Date(Date.now() - 3.5*3600*1000).toISOString(), duration_minutes: 90, purpose: 'Algorithm Simulation', status: 'COMPLETED' },
+            { id: 'cs-3', computer_id: 'comp-5', machine_code: 'HPC-PC-01', campus_id: 'camp-tech', student_name: 'Liam Zhang', student_id: 'REG-2026-003', start_time: new Date(Date.now() - 24*3600*1000).toISOString(), end_time: new Date(Date.now() - 21.5*3600*1000).toISOString(), duration_minutes: 150, purpose: 'Deep Learning Model Training', status: 'COMPLETED' }
+        ];
+        localStorage.setItem(STORAGE_KEYS.COMPUTER_SESSIONS, JSON.stringify(sampleSessions));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.PERIOD_SESSIONS)) {
+        const samplePeriods = [
+            { id: 'per-1', campus_id: 'camp-main', facility_type: 'LIBRARY', department_name: 'Computer Science', class_name: 'CS-A 2026', teacher_name: 'Dr. Robert Oppenheim', period_name: 'Period 3 (10:30 AM - 11:30 AM)', date: new Date().toISOString().split('T')[0], topic: 'Operating Systems Literature Survey', total_students: 45, present_count: 42, status: 'COMPLETED' },
+            { id: 'per-2', campus_id: 'camp-main', facility_type: 'COMPUTER_LAB', department_name: 'Computer Science', class_name: 'CS-B 2026', teacher_name: 'Prof. Ananya Roy', period_name: 'Period 5 (01:30 PM - 02:30 PM)', date: new Date().toISOString().split('T')[0], topic: 'Data Structures Practical Lab', total_students: 40, present_count: 38, status: 'ACTIVE' }
+        ];
+        localStorage.setItem(STORAGE_KEYS.PERIOD_SESSIONS, JSON.stringify(samplePeriods));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.EVENTS)) {
+        const sampleEvents = [
+            { id: 'ev-1', campus_id: 'camp-main', hall_id: 'hall-1', hall_name: 'Dr. APJ Abdul Kalam Auditorium', title: 'Annual International Tech Symposium 2026', description: 'Keynotes from global researchers on AI, Robotics, and Quantum Computing', organizer_name: 'School of Computing & TGI Library', conductor_name: 'Dr. Robert Oppenheim', start_datetime: new Date(Date.now() + 2*86400*1000).toISOString(), end_datetime: new Date(Date.now() + 2*86400*1000 + 4*3600*1000).toISOString(), expected_attendees: 500, registered_count: 412, status: 'APPROVED' },
+            { id: 'ev-2', campus_id: 'camp-main', hall_id: 'hall-2', hall_name: 'Sir CV Raman Seminar Hall', title: 'Author Interaction: Clean Code & Architecture', description: 'Interactive workshop with guest technical authors and live Q&A', organizer_name: 'Central Library Council', conductor_name: 'Claire Dupont', start_datetime: new Date(Date.now() + 5*86400*1000).toISOString(), end_datetime: new Date(Date.now() + 5*86400*1000 + 2*3600*1000).toISOString(), expected_attendees: 150, registered_count: 140, status: 'APPROVED' }
+        ];
+        localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(sampleEvents));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.FACILITY_REQUESTS)) {
+        const sampleRequests = [
+            { id: 'req-1', campus_id: 'camp-main', requester_name: 'Dr. Robert Oppenheim', role: 'Faculty / HOD', facility_type: 'COMPUTER_LAB', target_date: new Date(Date.now() + 86400*1000).toISOString().split('T')[0], period_time: '11:30 AM - 01:00 PM', reason: 'Conducting End-Semester Practical Coding Assessment for 45 students', status: 'PENDING', created_at: new Date().toISOString() },
+            { id: 'req-2', campus_id: 'camp-main', requester_name: 'Prof. Rajesh Sharma', role: 'Event Coordinator', facility_type: 'EVENT_HALL', target_date: new Date(Date.now() + 4*86400*1000).toISOString().split('T')[0], period_time: '02:00 PM - 05:00 PM', reason: 'Inter-College Hackathon Opening Ceremony', status: 'APPROVED', approved_by: 'Dr. Arthur Pendelton', created_at: new Date().toISOString() }
+        ];
+        localStorage.setItem(STORAGE_KEYS.FACILITY_REQUESTS, JSON.stringify(sampleRequests));
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.PERMISSIONS)) {
+        const initialPermissions = [
+            { role: 'SUPER_ADMIN', can_view_all_campuses: true, can_manage_catalog: true, can_manage_circulation: true, can_manage_members: true, can_manage_labs: true, can_manage_events: true, can_approve_requests: true, can_access_reports: true, can_configure_rbac: true },
+            { role: 'INSTITUTION_HEAD', can_view_all_campuses: true, can_manage_catalog: false, can_manage_circulation: false, can_manage_members: true, can_manage_labs: true, can_manage_events: true, can_approve_requests: true, can_access_reports: true, can_configure_rbac: false },
+            { role: 'CAMPUS_HEAD', can_view_all_campuses: false, can_manage_catalog: false, can_manage_circulation: true, can_manage_members: true, can_manage_labs: true, can_manage_events: true, can_approve_requests: true, can_access_reports: true, can_configure_rbac: false },
+            { role: 'TEACHER', can_view_all_campuses: false, can_manage_catalog: false, can_manage_circulation: false, can_manage_members: false, can_manage_labs: false, can_manage_events: false, can_take_attendance: true, can_request_facilities: true, can_access_reports: false },
+            { role: 'LIBRARIAN', can_view_all_campuses: false, can_manage_catalog: true, can_manage_circulation: true, can_manage_members: true, can_manage_labs: false, can_manage_events: false, can_approve_requests: false, can_access_reports: true },
+            { role: 'LAB_ADMIN', can_view_all_campuses: false, can_manage_catalog: false, can_manage_circulation: false, can_manage_members: false, can_manage_labs: true, can_manage_events: false, can_approve_requests: false, can_access_reports: true },
+            { role: 'EVENT_CONDUCTOR', can_view_all_campuses: false, can_manage_catalog: false, can_manage_circulation: false, can_manage_members: false, can_manage_labs: false, can_manage_events: true, can_scan_tickets: true, can_access_reports: false },
+            { role: 'STUDENT', can_view_all_campuses: false, can_opac_search: true, can_view_loans: true, can_view_lab_availability: true, can_view_events: true }
+        ];
+        localStorage.setItem(STORAGE_KEYS.PERMISSIONS, JSON.stringify(initialPermissions));
+    }
+}
+
+seedInitialErpData();
+
+export class ErpDataService {
+    constructor() {
+        this.activeCampusId = localStorage.getItem(STORAGE_KEYS.CURRENT_CAMPUS) || 'camp-main';
+    }
+
+    // --- CAMPUS MANAGEMENT ---
+    getActiveCampusId() {
+        return this.activeCampusId;
+    }
+
+    setActiveCampusId(campusId) {
+        this.activeCampusId = campusId;
+        localStorage.setItem(STORAGE_KEYS.CURRENT_CAMPUS, campusId);
+        window.dispatchEvent(new CustomEvent('campusChanged', { detail: { campusId } }));
+    }
+
+    getCampuses() {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.CAMPUSES) || '[]');
+    }
+
+    saveCampus(campus) {
+        const list = this.getCampuses();
+        if (campus.id) {
+            const index = list.findIndex(c => c.id === campus.id);
+            if (index !== -1) list[index] = campus;
+        } else {
+            campus.id = `camp-${Date.now()}`;
+            list.push(campus);
+        }
+        localStorage.setItem(STORAGE_KEYS.CAMPUSES, JSON.stringify(list));
+        return campus;
+    }
+
+    // --- COMPUTERS & WORKSTATION TRACKING ---
+    getComputers(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPUTERS) || '[]');
+        return campusId === 'ALL' ? all : all.filter(c => c.campus_id === campusId);
+    }
+
+    saveComputer(comp) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPUTERS) || '[]');
+        if (comp.id) {
+            const idx = list.findIndex(c => c.id === comp.id);
+            if (idx !== -1) list[idx] = comp;
+        } else {
+            comp.id = `comp-${Date.now()}`;
+            comp.campus_id = comp.campus_id || this.activeCampusId;
+            comp.status = comp.status || 'AVAILABLE';
+            list.push(comp);
+        }
+        localStorage.setItem(STORAGE_KEYS.COMPUTERS, JSON.stringify(list));
+        return comp;
+    }
+
+    deleteComputer(id) {
+        let list = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPUTERS) || '[]');
+        list = list.filter(c => c.id !== id);
+        localStorage.setItem(STORAGE_KEYS.COMPUTERS, JSON.stringify(list));
+    }
+
+    checkInComputer(computerId, studentOrStaffId, userName, purpose = 'Academic Research') {
+        const computers = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPUTERS) || '[]');
+        const comp = computers.find(c => c.id === computerId || c.machine_code === computerId);
+        if (!comp) throw new Error(`Computer with code "${computerId}" not found.`);
+        if (comp.status === 'IN_USE') throw new Error(`Computer "${comp.machine_code}" is currently occupied by ${comp.current_user_name}.`);
+
+        comp.status = 'IN_USE';
+        comp.current_user_id = studentOrStaffId;
+        comp.current_user_name = userName;
+        comp.session_start = new Date().toISOString();
+        comp.purpose = purpose;
+
+        localStorage.setItem(STORAGE_KEYS.COMPUTERS, JSON.stringify(computers));
+
+        // Create new active session record
+        const sessions = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPUTER_SESSIONS) || '[]');
+        const newSession = {
+            id: `cs-${Date.now()}`,
+            computer_id: comp.id,
+            machine_code: comp.machine_code,
+            campus_id: comp.campus_id,
+            student_id: studentOrStaffId,
+            student_name: userName,
+            start_time: comp.session_start,
+            end_time: null,
+            duration_minutes: 0,
+            purpose: purpose,
+            status: 'ACTIVE'
+        };
+        sessions.unshift(newSession);
+        localStorage.setItem(STORAGE_KEYS.COMPUTER_SESSIONS, JSON.stringify(sessions));
+
+        return { comp, session: newSession };
+    }
+
+    checkOutComputer(computerIdOrMachineCode) {
+        const computers = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPUTERS) || '[]');
+        const comp = computers.find(c => c.id === computerIdOrMachineCode || c.machine_code === computerIdOrMachineCode);
+        if (!comp) throw new Error(`Computer "${computerIdOrMachineCode}" not found.`);
+        if (comp.status !== 'IN_USE') throw new Error(`Computer "${comp.machine_code}" is not currently in use.`);
+
+        const endTime = new Date();
+        const startTime = new Date(comp.session_start || Date.now());
+        const durationMinutes = Math.max(1, Math.round((endTime - startTime) / (1000 * 60)));
+
+        const prevUser = comp.current_user_name;
+
+        comp.status = 'AVAILABLE';
+        comp.current_user_id = null;
+        comp.current_user_name = null;
+        comp.session_start = null;
+        comp.purpose = null;
+
+        localStorage.setItem(STORAGE_KEYS.COMPUTERS, JSON.stringify(computers));
+
+        // Update session record
+        const sessions = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPUTER_SESSIONS) || '[]');
+        const activeSession = sessions.find(s => s.computer_id === comp.id && s.status === 'ACTIVE');
+        if (activeSession) {
+            activeSession.end_time = endTime.toISOString();
+            activeSession.duration_minutes = durationMinutes;
+            activeSession.status = 'COMPLETED';
+            localStorage.setItem(STORAGE_KEYS.COMPUTER_SESSIONS, JSON.stringify(sessions));
+        }
+
+        return { comp, durationMinutes, userName: prevUser };
+    }
+
+    getComputerSessions(filters = {}) {
+        let sessions = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPUTER_SESSIONS) || '[]');
+        if (filters.campus_id && filters.campus_id !== 'ALL') {
+            sessions = sessions.filter(s => s.campus_id === filters.campus_id);
+        }
+        if (filters.student_id) {
+            sessions = sessions.filter(s => s.student_id.toLowerCase().includes(filters.student_id.toLowerCase()));
+        }
+        if (filters.machine_code) {
+            sessions = sessions.filter(s => s.machine_code.toLowerCase().includes(filters.machine_code.toLowerCase()));
+        }
+        if (filters.startDate) {
+            sessions = sessions.filter(s => new Date(s.start_time) >= new Date(filters.startDate));
+        }
+        if (filters.endDate) {
+            sessions = sessions.filter(s => new Date(s.start_time) <= new Date(filters.endDate));
+        }
+        return sessions;
+    }
+
+    // --- PERIOD ATTENDANCE TRACKER ---
+    getPeriodSessions(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.PERIOD_SESSIONS) || '[]');
+        return campusId === 'ALL' ? all : all.filter(p => p.campus_id === campusId);
+    }
+
+    createPeriodSession(session) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.PERIOD_SESSIONS) || '[]');
+        session.id = `per-${Date.now()}`;
+        session.campus_id = session.campus_id || this.activeCampusId;
+        session.date = session.date || new Date().toISOString().split('T')[0];
+        session.status = session.status || 'ACTIVE';
+        list.unshift(session);
+        localStorage.setItem(STORAGE_KEYS.PERIOD_SESSIONS, JSON.stringify(list));
+        return session;
+    }
+
+    getPeriodAttendance(sessionId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.PERIOD_ATTENDANCE) || '[]');
+        return all.filter(a => a.session_id === sessionId);
+    }
+
+    recordStudentAttendance(sessionId, studentId, studentName, status = 'PRESENT', method = 'NFC') {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.PERIOD_ATTENDANCE) || '[]');
+        let record = list.find(r => r.session_id === sessionId && r.student_id === studentId);
+        
+        if (record) {
+            record.status = status;
+            record.checkin_method = method;
+            record.checkin_time = new Date().toISOString();
+        } else {
+            record = {
+                id: `att-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+                session_id: sessionId,
+                student_id: studentId,
+                student_name: studentName,
+                status: status,
+                checkin_method: method,
+                checkin_time: new Date().toISOString()
+            };
+            list.push(record);
+        }
+        localStorage.setItem(STORAGE_KEYS.PERIOD_ATTENDANCE, JSON.stringify(list));
+
+        // Update present count in period session
+        const sessions = JSON.parse(localStorage.getItem(STORAGE_KEYS.PERIOD_SESSIONS) || '[]');
+        const sess = sessions.find(s => s.id === sessionId);
+        if (sess) {
+            sess.present_count = list.filter(r => r.session_id === sessionId && r.status === 'PRESENT').length;
+            localStorage.setItem(STORAGE_KEYS.PERIOD_SESSIONS, JSON.stringify(sessions));
+        }
+
+        return record;
+    }
+
+    // --- EVENT HALL & AUDITORIUM MANAGEMENT ---
+    getEventHalls(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENT_HALLS) || '[]');
+        return campusId === 'ALL' ? all : all.filter(h => h.campus_id === campusId);
+    }
+
+    getEvents(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS) || '[]');
+        return campusId === 'ALL' ? all : all.filter(e => e.campus_id === campusId);
+    }
+
+    createEvent(event) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS) || '[]');
+        event.id = `ev-${Date.now()}`;
+        event.campus_id = event.campus_id || this.activeCampusId;
+        event.status = event.status || 'PENDING_APPROVAL';
+        event.registered_count = 0;
+        list.unshift(event);
+        localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(list));
+        return event;
+    }
+
+    updateEventStatus(eventId, status) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS) || '[]');
+        const ev = list.find(e => e.id === eventId);
+        if (ev) {
+            ev.status = status;
+            localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(list));
+        }
+        return ev;
+    }
+
+    // --- EVENT ATTENDEES & TICKET CHECK-IN ---
+    getEventAttendees(eventId) {
+        const all = JSON.parse(localStorage.getItem('erp_event_attendees') || '[]');
+        return eventId ? all.filter(a => a.event_id === eventId) : all;
+    }
+
+    registerEventAttendee(eventId, memberId, memberName, email = '', role = 'STUDENT') {
+        const list = JSON.parse(localStorage.getItem('erp_event_attendees') || '[]');
+        const existing = list.find(a => a.event_id === eventId && a.member_id === memberId);
+        if (existing) return existing;
+
+        const ticketCode = `TKT-${eventId.slice(-4)}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const attendee = {
+            id: `att-ev-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+            event_id: eventId,
+            member_id: memberId,
+            member_name: memberName,
+            email: email,
+            role: role,
+            ticket_code: ticketCode,
+            status: 'REGISTERED',
+            checkin_time: null,
+            registered_at: new Date().toISOString()
+        };
+        list.push(attendee);
+        localStorage.setItem('erp_event_attendees', JSON.stringify(list));
+
+        // Increment event registered count
+        const events = this.getEvents('ALL');
+        const ev = events.find(e => e.id === eventId);
+        if (ev) {
+            ev.registered_count = (ev.registered_count || 0) + 1;
+            localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
+        }
+
+        return attendee;
+    }
+
+    checkInEventAttendee(eventId, searchKey) {
+        const list = JSON.parse(localStorage.getItem('erp_event_attendees') || '[]');
+        const q = (searchKey || '').trim().toLowerCase();
+        
+        let attendee = list.find(a => 
+            (eventId === 'ALL' || a.event_id === eventId) && 
+            (a.ticket_code.toLowerCase() === q || 
+             a.member_id.toLowerCase() === q || 
+             a.member_name.toLowerCase().includes(q))
+        );
+
+        if (!attendee) {
+            // Auto-register on spot if member exists in students or staff
+            const students = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
+            const staff = JSON.parse(localStorage.getItem(STORAGE_KEYS.STAFF) || '[]');
+            const foundStudent = students.find(s => s.student_id?.toLowerCase() === q || s.nfc_tag_id?.toLowerCase() === q || s.barcode?.toLowerCase() === q);
+            const foundStaff = staff.find(s => s.employee_id?.toLowerCase() === q || s.nfc_tag_id?.toLowerCase() === q || s.qr_code?.toLowerCase() === q);
+
+            if (foundStudent || foundStaff) {
+                const target = foundStudent || foundStaff;
+                const targetId = foundStudent ? target.student_id : target.employee_id;
+                const targetRole = foundStudent ? 'STUDENT' : 'FACULTY';
+                attendee = this.registerEventAttendee(eventId, targetId, target.name, target.email || '', targetRole);
+            } else {
+                throw new Error(`Attendee or Ticket "${searchKey}" not registered for this event.`);
+            }
+        }
+
+        attendee.status = 'CHECKED_IN';
+        attendee.checkin_time = new Date().toISOString();
+        localStorage.setItem('erp_event_attendees', JSON.stringify(list));
+        return attendee;
+    }
+
+    deleteEvent(id) {
+        let list = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS) || '[]');
+        list = list.filter(e => e.id !== id);
+        localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(list));
+    }
+
+    // --- FACILITY REQUESTS & APPROVALS WORKFLOW ---
+    getFacilityRequests(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.FACILITY_REQUESTS) || '[]');
+        return campusId === 'ALL' ? all : all.filter(r => r.campus_id === campusId);
+    }
+
+    submitFacilityRequest(request) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.FACILITY_REQUESTS) || '[]');
+        request.id = `req-${Date.now()}`;
+        request.campus_id = request.campus_id || this.activeCampusId;
+        request.status = 'PENDING';
+        request.created_at = new Date().toISOString();
+        list.unshift(request);
+        localStorage.setItem(STORAGE_KEYS.FACILITY_REQUESTS, JSON.stringify(list));
+        return request;
+    }
+
+    updateFacilityRequestStatus(requestId, status, approverName, remarks = '') {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.FACILITY_REQUESTS) || '[]');
+        const req = list.find(r => r.id === requestId);
+        if (req) {
+            req.status = status;
+            req.approved_by = approverName;
+            req.remarks = remarks;
+            req.resolved_at = new Date().toISOString();
+            localStorage.setItem(STORAGE_KEYS.FACILITY_REQUESTS, JSON.stringify(list));
+        }
+        return req;
+    }
+
+    deleteFacilityRequest(id) {
+        let list = JSON.parse(localStorage.getItem(STORAGE_KEYS.FACILITY_REQUESTS) || '[]');
+        list = list.filter(r => r.id !== id);
+        localStorage.setItem(STORAGE_KEYS.FACILITY_REQUESTS, JSON.stringify(list));
+    }
+
+    // --- STAFF & FACULTY DIRECTORY ---
+    getStaff(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.STAFF) || '[]');
+        return campusId === 'ALL' ? all : all.filter(s => s.campus_id === campusId);
+    }
+
+    saveStaff(member) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.STAFF) || '[]');
+        if (member.id) {
+            const idx = list.findIndex(s => s.id === member.id);
+            if (idx !== -1) list[idx] = member;
+        } else {
+            member.id = `staff-${Date.now()}`;
+            member.campus_id = member.campus_id || this.activeCampusId;
+            member.status = member.status || 'ACTIVE';
+            list.push(member);
+        }
+        localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(list));
+        return member;
+    }
+
+    deleteStaff(id) {
+        let list = JSON.parse(localStorage.getItem(STORAGE_KEYS.STAFF) || '[]');
+        list = list.filter(s => s.id !== id);
+        localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(list));
+    }
+
+    // --- ACCESS CONTROL & RBAC PERMISSION MATRIX ---
+    getPermissions() {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.PERMISSIONS) || '[]');
+    }
+
+    updatePermission(role, field, value) {
+        const list = this.getPermissions();
+        const roleObj = list.find(p => p.role === role);
+        if (roleObj) {
+            roleObj[field] = value;
+            localStorage.setItem(STORAGE_KEYS.PERMISSIONS, JSON.stringify(list));
+        }
+        return roleObj;
+    }
+
+    saveRolePermissions(roleObj) {
+        const list = this.getPermissions();
+        const idx = list.findIndex(p => p.role === roleObj.role);
+        if (idx !== -1) {
+            list[idx] = roleObj;
+        } else {
+            list.push(roleObj);
+        }
+        localStorage.setItem(STORAGE_KEYS.PERMISSIONS, JSON.stringify(list));
+        return roleObj;
+    }
+
+    // --- AGGREGATED USAGE ANALYTICS ENGINE ---
+    getComputerUsageAnalytics(timeframe = 'all', campusId = 'ALL') {
+        const sessions = this.getComputerSessions({ campus_id: campusId });
+        const now = new Date();
+        
+        let filtered = sessions;
+        if (timeframe === 'day') {
+            const todayStr = now.toISOString().split('T')[0];
+            filtered = sessions.filter(s => s.start_time.startsWith(todayStr));
+        } else if (timeframe === 'week') {
+            const oneWeekAgo = new Date(now.getTime() - 7 * 86400 * 1000);
+            filtered = sessions.filter(s => new Date(s.start_time) >= oneWeekAgo);
+        } else if (timeframe === 'month') {
+            const oneMonthAgo = new Date(now.getTime() - 30 * 86400 * 1000);
+            filtered = sessions.filter(s => new Date(s.start_time) >= oneMonthAgo);
+        }
+
+        const totalMinutes = filtered.reduce((acc, s) => acc + (s.duration_minutes || 0), 0);
+        const totalSessions = filtered.length;
+        
+        // Machine distribution
+        const machineUsage = {};
+        filtered.forEach(s => {
+            machineUsage[s.machine_code] = (machineUsage[s.machine_code] || 0) + (s.duration_minutes || 0);
+        });
+
+        // Student usage aggregation
+        const studentUsage = {};
+        filtered.forEach(s => {
+            if (!studentUsage[s.student_id]) {
+                studentUsage[s.student_id] = {
+                    student_id: s.student_id,
+                    student_name: s.student_name,
+                    total_minutes: 0,
+                    sessions_count: 0
+                };
+            }
+            studentUsage[s.student_id].total_minutes += (s.duration_minutes || 0);
+            studentUsage[s.student_id].sessions_count += 1;
+        });
+
+        return {
+            totalMinutes,
+            totalHours: (totalMinutes / 60).toFixed(1),
+            totalSessions,
+            machineUsage,
+            studentUsage: Object.values(studentUsage).sort((a,b) => b.total_minutes - a.total_minutes),
+            sessions: filtered
+        };
+    }
+
+    // --- NOTIFICATIONS SYSTEM ---
+    getNotifications(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+        return campusId === 'ALL' ? all : all.filter(n => n.campus_id === campusId || n.campus_id === 'ALL');
+    }
+
+    getUnreadNotificationCount() {
+        return this.getNotifications().filter(n => n.unread).length;
+    }
+
+    createNotification(notif) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+        notif.id = `notif-${Date.now()}`;
+        notif.timestamp = notif.timestamp || new Date().toISOString();
+        notif.unread = true;
+        list.unshift(notif);
+        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
+        window.dispatchEvent(new CustomEvent('notificationReceived', { detail: notif }));
+        return notif;
+    }
+
+    markNotificationRead(id) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+        const target = list.find(n => n.id === id);
+        if (target) {
+            target.unread = false;
+            localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
+            window.dispatchEvent(new CustomEvent('notificationsUpdated'));
+        }
+    }
+
+    markAllNotificationsRead() {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+        list.forEach(n => n.unread = false);
+        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
+        window.dispatchEvent(new CustomEvent('notificationsUpdated'));
+    }
+
+    deleteNotification(id) {
+        let list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+        list = list.filter(n => n.id !== id);
+        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
+        window.dispatchEvent(new CustomEvent('notificationsUpdated'));
+    }
+
+    // --- PREMIUM ADMIN MESSENGER & HELPDESK ---
+    getChatChannels() {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.CHAT_CHANNELS) || '[]');
+    }
+
+    getChatMessages(channelId = 'ch-admin') {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES) || '[]');
+        return all.filter(m => m.channel_id === channelId);
+    }
+
+    sendChatMessage(channelId, senderId, senderName, senderRole, text, isOutgoing = true) {
+        const messages = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES) || '[]');
+        const channels = this.getChatChannels();
+
+        const newMsg = {
+            id: `msg-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+            channel_id: channelId,
+            sender_id: senderId,
+            sender_name: senderName,
+            sender_role: senderRole,
+            text: text,
+            is_outgoing: isOutgoing,
+            timestamp: new Date().toISOString()
+        };
+
+        messages.push(newMsg);
+        localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(messages));
+
+        // Update channel last message
+        const ch = channels.find(c => c.id === channelId);
+        if (ch) {
+            ch.last_message = text;
+            ch.last_time = newMsg.timestamp;
+            localStorage.setItem(STORAGE_KEYS.CHAT_CHANNELS, JSON.stringify(channels));
+        }
+
+        window.dispatchEvent(new CustomEvent('chatMessageSent', { detail: newMsg }));
+        return newMsg;
+    }
+}
+
+export const erp = new ErpDataService();
+window.erp = erp;
+

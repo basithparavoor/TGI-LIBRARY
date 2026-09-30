@@ -9,64 +9,97 @@
         <!-- Branding / Page Title -->
         <div id="topbar-title" style="display: flex; align-items: center; gap: 0.75rem;">
             <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--brand-gradient); display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 2px 8px var(--brand-glow);">
-                <i data-lucide="library" style="width: 18px; height: 18px;"></i>
+                <i data-lucide="building-2" style="width: 18px; height: 18px;"></i>
             </div>
             <div>
-                <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.01em;">TGI LIBRARY</h2>
+                <h2 style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -0.01em;">TGI INSTITUTIONAL ERP</h2>
                 <div style="display: flex; align-items: center; gap: 0.4rem;">
                     <span class="badge-dot" style="background: var(--success); width: 6px; height: 6px;"></span>
-                    <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Cloud Connected</span>
+                    <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Multi-Campus Enterprise</span>
                 </div>
             </div>
         </div>
+
+        <!-- Campus Switcher Selector -->
+        <div class="campus-selector-wrapper" style="display: flex; align-items: center; gap: 0.4rem; background: var(--bg-muted); border: 1px solid var(--border-color); border-radius: var(--radius-full); padding: 0.2rem 0.6rem; margin-left: 0.5rem;">
+            <i data-lucide="map-pin" style="width: 14px; height: 14px; color: var(--brand-primary);"></i>
+            <select id="topbar-campus-select" style="background: transparent; border: none; font-size: 0.75rem; font-weight: 700; color: var(--text-primary); padding: 0.15rem 0.25rem; outline: none; cursor: pointer; width: auto; max-width: 210px;">
+                <option value="camp-main">Main Metropolitan Campus</option>
+                <option value="camp-tech">Tech & Engineering Campus</option>
+                <option value="camp-north">North Sub-Campus</option>
+                <option value="ALL">🌐 All Campuses (Global View)</option>
+            </select>
+        </div>
     </div>
 
-    <div class="header-actions" style="display: flex; align-items: center; gap: 0.75rem;">
-        <!-- Search Shortcut Hint -->
-        <button class="btn btn-outline" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.85rem; border-color: var(--border-color); background: var(--bg-surface); border-radius: var(--radius-full); box-shadow: var(--shadow-xs);" onclick="window.toggleCommandPalette()">
-            <i data-lucide="search" style="width: 15px; height: 15px; color: var(--text-secondary);"></i> 
-            <span class="topbar-search-text" style="font-size: 0.825rem; color: var(--text-secondary); font-weight: 500;">Quick Search...</span> 
-            <kbd style="background: var(--bg-muted); color: var(--text-muted); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; border: 1px solid var(--border-color);">Ctrl K</kbd>
+    <div class="header-actions" style="display: flex; align-items: center; gap: 0.65rem;">
+        <!-- Quick Search -->
+        <button class="btn btn-outline" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.75rem; border-color: var(--border-color); background: var(--bg-surface); border-radius: var(--radius-full); box-shadow: var(--shadow-xs);" onclick="window.toggleCommandPalette()">
+            <i data-lucide="search" style="width: 14px; height: 14px; color: var(--text-secondary);"></i> 
+            <span class="topbar-search-text" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">Search ERP...</span> 
+            <kbd style="background: var(--bg-muted); color: var(--text-muted); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.65rem; font-weight: 600; border: 1px solid var(--border-color);">Ctrl K</kbd>
+        </button>
+
+        <!-- NFC Hardware Status Indicator -->
+        <button id="btn-nfc-tap-topbar" class="btn btn-ghost btn-sm" title="NFC Smartcard Reader" style="border-radius: var(--radius-full); background: rgba(59,130,246,0.08); color: var(--brand-primary); padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.35rem;">
+            <i data-lucide="radio" style="width: 14px; height: 14px;"></i> <span>NFC Ready</span>
+        </button>
+
+        <!-- Notification Bell -->
+        <button id="btn-notifications-topbar" class="btn btn-ghost btn-icon" title="Notifications" style="border-radius: 50%; width: 34px; height: 34px; position: relative;">
+            <i data-lucide="bell" style="width: 16px; height: 16px;"></i>
+            <span id="topbar-notif-badge" style="position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-danger); display: block;"></span>
+        </button>
+
+        <!-- Admin Messenger Desk -->
+        <button id="btn-messenger-topbar" class="btn btn-ghost btn-icon" title="Executive Admin Messenger" style="border-radius: 50%; width: 34px; height: 34px; position: relative; color: var(--brand-primary);">
+            <i data-lucide="message-square" style="width: 16px; height: 16px;"></i>
+            <span id="topbar-chat-badge" style="position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); display: block;"></span>
         </button>
 
         <!-- Live Clock Pill -->
-        <div id="topbar-clock" style="display: none; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); background: var(--bg-muted); padding: 0.35rem 0.75rem; border-radius: var(--radius-full); border: 1px solid var(--border-color); font-family: var(--font-mono);">
+        <div id="topbar-clock" style="display: none; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); background: var(--bg-muted); padding: 0.35rem 0.65rem; border-radius: var(--radius-full); border: 1px solid var(--border-color); font-family: var(--font-mono);">
             --:--:--
         </div>
 
-        <div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 0.25rem;"></div>
+        <div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 0.15rem;"></div>
 
-        <!-- Theme Toggle Button -->
-        <button id="theme-toggle" class="btn btn-ghost btn-icon" title="Toggle Theme" style="border-radius: 50%;">
-            <i data-lucide="moon" style="width: 18px; height: 18px;"></i>
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" class="btn btn-ghost btn-icon" title="Toggle Theme" style="border-radius: 50%; width: 34px; height: 34px;">
+            <i data-lucide="moon" style="width: 16px; height: 16px;"></i>
         </button>
 
         <!-- User Profile Dropdown -->
-        <div class="user-profile" style="display: flex; align-items: center; gap: 0.65rem; padding: 0.3rem 0.6rem; border-radius: var(--radius-full); background: var(--bg-muted); border: 1px solid var(--border-color); cursor: pointer; transition: all var(--transition-fast);">
-            <div id="topbar-user-avatar" style="width: 28px; height: 28px; border-radius: 50%; background: var(--brand-gradient); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; box-shadow: 0 2px 6px var(--brand-glow);">
+        <div class="user-profile" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.5rem; border-radius: var(--radius-full); background: var(--bg-muted); border: 1px solid var(--border-color); cursor: pointer;">
+            <div id="topbar-user-avatar" style="width: 26px; height: 26px; border-radius: 50%; background: var(--brand-gradient); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem; box-shadow: 0 2px 6px var(--brand-glow);">
                 A
             </div>
-            <div class="user-info-text" style="text-align: left; padding-right: 0.25rem;">
-                <p id="topbar-user-name" style="font-size: 0.8rem; font-weight: 700; margin: 0; line-height: 1.2; color: var(--text-primary);">Admin</p>
-                <p id="topbar-user-role" style="font-size: 0.65rem; color: var(--brand-primary); margin: 0; font-weight: 600; text-transform: uppercase;">Super Admin</p>
+            <div class="user-info-text" style="text-align: left; padding-right: 0.2rem;">
+                <p id="topbar-user-name" style="font-size: 0.75rem; font-weight: 700; margin: 0; line-height: 1.2; color: var(--text-primary);">Super Admin</p>
+                <p id="topbar-user-role" style="font-size: 0.6rem; color: var(--brand-primary); margin: 0; font-weight: 700; text-transform: uppercase;">Executive ERP</p>
             </div>
         </div>
 
         <!-- Logout Button -->
-        <button id="logout-btn" class="btn btn-ghost btn-icon" title="Sign Out" style="color: var(--danger); border-radius: 50%;">
-            <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
+        <button id="logout-btn" class="btn btn-ghost btn-icon" title="Sign Out" style="color: var(--danger); border-radius: 50%; width: 34px; height: 34px;">
+            <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
         </button>
     </div>
     
     <style>
-        @media (min-width: 900px) {
+        @media (min-width: 1080px) {
             #topbar-clock { display: block !important; }
+        }
+        @media (max-width: 860px) {
+            .campus-selector-wrapper select { max-width: 130px; }
+            #btn-nfc-tap-topbar span { display: none; }
         }
         @media (max-width: 768px) {
             #mobile-menu-btn { display: flex !important; }
             .user-info-text { display: none !important; }
             .topbar-search-text { display: none !important; }
             #topbar-title h2 { display: none !important; }
+            .campus-selector-wrapper { display: none !important; }
         }
     </style>
 </header>

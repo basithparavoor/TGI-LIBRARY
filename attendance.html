@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Period & Lab Attendance - TGI ERP</title>
+    <link rel="stylesheet" href="variables.css">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="components.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div id="sidebar-container"></div>
+
+        <!-- Main Content Area -->
+        <div class="main-content-wrapper">
+            <div id="topbar-container"></div>
+            
+            <main class="main-content">
+                <!-- Page Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <span class="badge badge-brand" style="font-size: 0.7rem;"><span class="badge-dot"></span> ATTENDANCE DESK</span>
+                            <span id="attendance-campus-text" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Main Campus</span>
+                        </div>
+                        <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.03em;">Class Period & Lab Attendance</h1>
+                        <p style="color: var(--text-secondary); font-size: 0.95rem;">Track student attendance during library reading hours, practical computer lab periods, and faculty sessions.</p>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <button class="btn btn-outline" id="btn-nfc-attendance"><i data-lucide="radio" style="width: 16px;"></i> Tap Student NFC</button>
+                        <button class="btn btn-outline" id="btn-camera-attendance"><i data-lucide="camera" style="width: 16px;"></i> Scan Badge QR</button>
+                        <button class="btn btn-primary" id="btn-start-period"><i data-lucide="plus" style="width: 16px;"></i> Schedule / Start Period</button>
+                    </div>
+                </div>
+
+                <div class="responsive-grid-2">
+                    <!-- Active Period Sessions List -->
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0;">Today's Facility Periods</h2>
+                            <span id="active-periods-badge" class="badge badge-brand" style="font-size: 0.75rem;">0 Sessions</span>
+                        </div>
+
+                        <div id="period-sessions-container" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Attendance Roster & Terminal Panel -->
+                    <div class="card card-glass" style="display: flex; flex-direction: column; min-height: 480px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <div>
+                                <h3 id="current-period-title" style="font-size: 1.15rem; font-weight: 800; margin: 0;">Select a Period Session</h3>
+                                <p id="current-period-subtitle" style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Click on any scheduled period on the left to take attendance</p>
+                            </div>
+                            <div style="display: flex; gap: 0.4rem;" id="roster-actions-bar" style="display: none;">
+                                <button class="btn btn-sm btn-outline" id="btn-mark-all-present"><i data-lucide="check-check" style="width: 14px;"></i> Mark All Present</button>
+                                <button class="btn btn-sm btn-outline" onclick="window.print()"><i data-lucide="printer" style="width: 14px;"></i> Print Sheet</button>
+                            </div>
+                        </div>
+
+                        <!-- Rapid Student ID Input -->
+                        <div id="terminal-input-row" style="display: none; margin-bottom: 1rem;">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" id="attendance-student-input" placeholder="Type or scan Student Register ID..." style="flex: 1;">
+                                <button class="btn btn-primary" id="btn-mark-single-present"><i data-lucide="check" style="width: 16px;"></i> Mark</button>
+                            </div>
+                        </div>
+
+                        <!-- Attendance Roster List -->
+                        <div id="attendance-roster-list" style="flex: 1; overflow-y: auto; max-height: 380px; display: flex; flex-direction: column; gap: 0.5rem;">
+                            <div style="padding: 3rem; text-align: center; color: var(--text-muted);">
+                                <i data-lucide="users" style="width: 36px; height: 36px; opacity: 0.4; margin-bottom: 0.5rem;"></i>
+                                <div>No period session selected. Select a class period to record attendance.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- START / SCHEDULE PERIOD MODAL -->
+    <div id="modal-period" class="app-dialog-overlay">
+        <div class="app-dialog" style="max-width: 600px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h2 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Start Class Facility Period</h2>
+                <button class="btn btn-ghost btn-icon close-period-modal"><i data-lucide="x" style="width: 18px;"></i></button>
+            </div>
+
+            <form id="form-period">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="input-group">
+                        <label>Facility Type *</label>
+                        <select id="period-facility" required>
+                            <option value="LIBRARY">Central Library Reading Period</option>
+                            <option value="COMPUTER_LAB">Computer Practical Lab</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Period Slot *</label>
+                        <input type="text" id="period-slot-name" required placeholder="e.g. Period 3 (10:30 AM - 11:30 AM)">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="input-group">
+                        <label>Department *</label>
+                        <select id="period-dept" required>
+                            <option value="Computer Science">Computer Science & Engineering</option>
+                            <option value="Information Technology">Information Technology</option>
+                            <option value="Electronics">Electronics & Communication</option>
+                            <option value="Mechanical">Mechanical Engineering</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Class / Section *</label>
+                        <input type="text" id="period-class" required placeholder="e.g. CS-A 2026">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Faculty / Teacher In-Charge *</label>
+                    <input type="text" id="period-teacher" required placeholder="e.g. Dr. Robert Oppenheim">
+                </div>
+
+                <div class="input-group">
+                    <label>Period Topic / Activity</label>
+                    <input type="text" id="period-topic" placeholder="e.g. Journal Literature Review / Compiler Lab Assessment">
+                </div>
+
+                <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <button type="button" class="btn btn-outline close-period-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="play" style="width: 16px;"></i> Launch Period Session</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ATTENDANCE SCANNER MODAL -->
+    <div id="att-scanner-modal" class="app-dialog-overlay">
+        <div class="app-dialog" style="max-width: 480px; text-align: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700;">Scan Student Badge QR</h3>
+                <button onclick="document.getElementById('att-scanner-modal').classList.remove('active')" class="btn btn-ghost btn-icon"><i data-lucide="x" style="width: 18px;"></i></button>
+            </div>
+            <div id="att-reader" style="width: 100%; min-height: 260px; background: #000; border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 1rem;"></div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Point camera at student smart ID badge.</p>
+        </div>
+    </div>
+
+    <script>lucide.createIcons();</script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="ui.js"></script>
+    <script type="module" src="attendance.js"></script>
+</body>
+</html>

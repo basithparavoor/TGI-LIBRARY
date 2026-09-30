@@ -52,8 +52,9 @@
                 </div>
 
                 <!-- Tabs -->
-                <div style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                <div style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; flex-wrap: wrap;">
                     <button class="tab-btn active" data-target="panel-general">Circulation Rules</button>
+                    <button class="tab-btn" data-target="panel-campuses">Institutional Campuses</button>
                     <button class="tab-btn" data-target="panel-master-data">Master Data Hierarchy</button>
                 </div>
 
@@ -90,7 +91,36 @@
                     </form>
                 </div>
 
-                <!-- PANEL 2: MASTER DATA -->
+                <!-- PANEL 2: INSTITUTIONAL CAMPUSES -->
+                <div id="panel-campuses" class="card card-glass tab-panel" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <div>
+                            <h2 style="font-size: 1.2rem; font-weight: 800; margin: 0;">Institutional Sub-Campuses</h2>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Manage campuses, branches, dean leadership, and inter-campus routing.</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" id="btn-add-campus"><i data-lucide="plus" style="width: 14px;"></i> Register Campus</button>
+                    </div>
+                    
+                    <div class="table-responsive" style="margin-top: 1rem;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Campus Code</th>
+                                    <th>Campus Name</th>
+                                    <th>City / Region</th>
+                                    <th>Dean / Campus Head</th>
+                                    <th>Contact Email</th>
+                                    <th>Phone</th>
+                                </tr>
+                            </thead>
+                            <tbody id="campuses-tbody">
+                                <!-- Injected dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PANEL 3: MASTER DATA -->
                 <div id="panel-master-data" class="card card-glass tab-panel" style="display: none;">
                     <h2 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.25rem;">Master Data Hierarchy</h2>
                     <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">Manage departments, student classes, library shelves, and physical rack divisions.</p>

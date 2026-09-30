@@ -205,7 +205,55 @@ window.deleteEntity = function(table, id, name) {
     });
 };
 
+// --- INSTITUTIONAL SUB-CAMPUSES ---
+import { erp } from './erp_service.js';
+
+function loadCampuses() {
+    const tbody = document.getElementById('campuses-tbody');
+    if (!tbody) return;
+
+    const campuses = erp.getCampuses();
+    if (campuses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">No campuses registered yet.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = campuses.map(c => `
+        <tr>
+            <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-primary);">${c.code}</td>
+            <td style="font-weight: 700; color: var(--text-primary);">${c.name}</td>
+            <td>${c.city || 'Bangalore'}</td>
+            <td style="font-weight: 600;">${c.head_name || 'Dean Office'}</td>
+            <td style="font-size: 0.85rem; color: var(--text-muted);">${c.email || 'campus@tgi.edu'}</td>
+            <td style="font-size: 0.85rem;">${c.phone || '+91 80 0000 0000'}</td>
+        </tr>
+    `).join('');
+}
+
+document.getElementById('btn-add-campus')?.addEventListener('click', () => {
+    const name = prompt('Enter Campus Full Name:');
+    if (!name) return;
+    const code = prompt('Enter Campus Code (e.g., MMC, TEC, NSC):', 'WEC');
+    if (!code) return;
+    const city = prompt('Enter Campus City / Region:', 'Bangalore');
+    const headName = prompt('Enter Dean / Campus Head Full Name:', 'Dr. Sarah Connor');
+    const email = prompt('Enter Official Contact Email:', `dean.${code.toLowerCase()}@tgi.edu`);
+
+    erp.saveCampus({
+        name,
+        code: code.toUpperCase(),
+        city: city || 'Bangalore',
+        head_name: headName || 'Campus Dean',
+        email: email || 'dean@tgi.edu',
+        phone: '+91 80 2345 6789'
+    });
+
+    window.app.toast(`Campus "${name}" registered successfully!`, 'success', 'Campus Added');
+    loadCampuses();
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
+    loadCampuses();
     loadHierarchicalData();
 });
