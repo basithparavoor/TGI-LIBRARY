@@ -72,18 +72,30 @@ settingsForm?.addEventListener('submit', async (e) => {
 let currentInstitutionLogo = '';
 let currentInstitutionFavicon = '';
 
-function loadInstitutionProfile() {
+async function loadInstitutionProfile() {
     const profile = erp.getInstitutionProfile();
-    document.getElementById('inst-name').value = profile.name || '';
-    document.getElementById('inst-tagline').value = profile.tagline || '';
-    document.getElementById('inst-reg-code').value = profile.reg_code || '';
-    document.getElementById('inst-est-year').value = profile.established_year || '';
-    document.getElementById('inst-email').value = profile.email || '';
-    document.getElementById('inst-phone').value = profile.phone || '';
-    document.getElementById('inst-website').value = profile.website || '';
-    document.getElementById('inst-address').value = profile.address || '';
-    document.getElementById('inst-logo-url').value = profile.logo_url || '';
-    document.getElementById('inst-favicon-url').value = profile.favicon_url || '';
+    populateProfileFields(profile);
+
+    try {
+        const remoteProfile = await erp.syncInstitutionProfileFromSupabase();
+        if (remoteProfile) {
+            populateProfileFields(remoteProfile);
+        }
+    } catch (e) {}
+}
+
+function populateProfileFields(profile) {
+    if (!profile) return;
+    if (document.getElementById('inst-name')) document.getElementById('inst-name').value = profile.name || '';
+    if (document.getElementById('inst-tagline')) document.getElementById('inst-tagline').value = profile.tagline || '';
+    if (document.getElementById('inst-reg-code')) document.getElementById('inst-reg-code').value = profile.reg_code || '';
+    if (document.getElementById('inst-est-year')) document.getElementById('inst-est-year').value = profile.established_year || '';
+    if (document.getElementById('inst-email')) document.getElementById('inst-email').value = profile.email || '';
+    if (document.getElementById('inst-phone')) document.getElementById('inst-phone').value = profile.phone || '';
+    if (document.getElementById('inst-website')) document.getElementById('inst-website').value = profile.website || '';
+    if (document.getElementById('inst-address')) document.getElementById('inst-address').value = profile.address || '';
+    if (document.getElementById('inst-logo-url')) document.getElementById('inst-logo-url').value = profile.logo_url || '';
+    if (document.getElementById('inst-favicon-url')) document.getElementById('inst-favicon-url').value = profile.favicon_url || '';
 
     currentInstitutionLogo = profile.logo_url || '';
     currentInstitutionFavicon = profile.favicon_url || '';
@@ -114,17 +126,49 @@ function renderFaviconPreview() {
     }
 }
 
+function compressImageFile(file, maxWidth = 400, maxHeight = 400, quality = 0.88) {
+    return new Promise((resolve) => {
+        if (!file || !file.type.startsWith('image/')) {
+            resolve('');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                if (width > maxWidth || height > maxHeight) {
+                    if (width / height > maxWidth / maxHeight) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    } else {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/png', quality));
+            };
+            img.onerror = () => resolve(e.target.result);
+            img.src = e.target.result;
+        };
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(file);
+    });
+}
+
 // Logo file picker
-document.getElementById('inst-logo-file')?.addEventListener('change', (e) => {
+document.getElementById('inst-logo-file')?.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            currentInstitutionLogo = evt.target.result;
-            document.getElementById('inst-logo-url').value = '';
-            renderLogoPreview();
-        };
-        reader.readAsDataURL(file);
+        currentInstitutionLogo = await compressImageFile(file, 400, 400);
+        document.getElementById('inst-logo-url').value = '';
+        renderLogoPreview();
     }
 });
 
@@ -143,16 +187,12 @@ document.getElementById('btn-clear-logo')?.addEventListener('click', () => {
 });
 
 // Favicon file picker
-document.getElementById('inst-favicon-file')?.addEventListener('change', (e) => {
+document.getElementById('inst-favicon-file')?.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            currentInstitutionFavicon = evt.target.result;
-            document.getElementById('inst-favicon-url').value = '';
-            renderFaviconPreview();
-        };
-        reader.readAsDataURL(file);
+        currentInstitutionFavicon = await compressImageFile(file, 128, 128);
+        document.getElementById('inst-favicon-url').value = '';
+        renderFaviconPreview();
     }
 });
 
@@ -171,10 +211,18 @@ document.getElementById('btn-clear-favicon')?.addEventListener('click', () => {
 });
 
 // Save Institution Profile Form
-document.getElementById('form-institution-profile')?.addEventListener('submit', (e) => {
+document.getElementById('form-institution-profile')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const btn = document.getElementById('btn-save-institution');
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width: 16px;"></i> Saving to Cloud...';
+        btn.disabled = true;
+        if (window.lucide) lucide.createIcons();
+    }
+
     const profileData = {
-        name: document.getElementById('inst-name').value.trim(),
+        name: document.getElementById('inst-name').value.trim() || 'INSTITUTION NAME',
         tagline: document.getElementById('inst-tagline').value.trim(),
         reg_code: document.getElementById('inst-reg-code').value.trim(),
         established_year: document.getElementById('inst-est-year').value.trim(),
@@ -186,14 +234,25 @@ document.getElementById('form-institution-profile')?.addEventListener('submit', 
         favicon_url: currentInstitutionFavicon
     };
 
-    erp.saveInstitutionProfile(profileData);
-    window.app.toast(`Institution Profile & Branding for "${profileData.name}" saved!`, 'success', 'Profile Saved');
+    try {
+        await erp.saveInstitutionProfile(profileData);
+        window.app.toast(`Institution Profile & Branding for "${profileData.name}" saved to Database!`, 'success', 'Profile Saved');
+    } catch (err) {
+        console.error("Save profile error:", err);
+        window.app.toast("Could not save profile to database.", "error", "Save Failed");
+    } finally {
+        if (btn) {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+            if (window.lucide) lucide.createIcons();
+        }
+    }
 });
 
 // Reset Institution Profile to Defaults
-document.getElementById('btn-reset-profile')?.addEventListener('click', () => {
-    window.app.confirm('Reset institution profile, logo, and favicon back to system default credentials?', 'Reset Profile', () => {
-        erp.resetInstitutionProfile();
+document.getElementById('btn-reset-profile')?.addEventListener('click', async () => {
+    window.app.confirm('Reset institution profile, logo, and favicon back to system default credentials?', 'Reset Profile', async () => {
+        await erp.resetInstitutionProfile();
         loadInstitutionProfile();
         window.app.toast('Institution profile reset to default.', 'info', 'Profile Reset');
     });

@@ -195,42 +195,69 @@ export class ErpDataService {
         return JSON.parse(localStorage.getItem(STORAGE_KEYS.INSTITUTION_PROFILE) || JSON.stringify(defaultProfile));
     }
 
-    saveInstitutionProfile(profile) {
+    async saveInstitutionProfile(profile) {
         const current = this.getInstitutionProfile();
         const updated = { ...current, ...profile };
-        localStorage.setItem(STORAGE_KEYS.INSTITUTION_PROFILE, JSON.stringify(updated));
+        try {
+            localStorage.setItem(STORAGE_KEYS.INSTITUTION_PROFILE, JSON.stringify(updated));
+        } catch (e) {
+            console.warn("LocalStorage save warning:", e);
+        }
         window.dispatchEvent(new CustomEvent('institutionProfileUpdated', { detail: updated }));
 
         // Async sync to Supabase remote database
         try {
-            supabase.from('institution_profile').upsert({
-                id: 'main_institution_profile',
-                name: updated.name,
-                tagline: updated.tagline,
-                reg_code: updated.reg_code,
-                email: updated.email,
-                phone: updated.phone,
-                website: updated.website,
-                address: updated.address,
-                logo_url: updated.logo_url,
-                favicon_url: updated.favicon_url,
-                established_year: updated.established_year,
+            const { error } = await supabase.from('institution_profile').upsert({
+                id: 'primary_institution',
+                name: updated.name || 'INSTITUTION NAME',
+                tagline: updated.tagline || '',
+                reg_code: updated.reg_code || '',
+                email: updated.email || '',
+                phone: updated.phone || '',
+                website: updated.website || '',
+                address: updated.address || '',
+                logo_url: updated.logo_url || null,
+                favicon_url: updated.favicon_url || null,
+                established_year: updated.established_year || '1998',
                 updated_at: new Date().toISOString()
-            }, { onConflict: 'id' }).then(({ error }) => {
-                if (error) console.warn("Supabase institution profile sync warning:", error);
-            }).catch(e => console.warn("Supabase profile sync err:", e));
-        } catch (e) {}
+            }, { onConflict: 'id' });
+
+            if (error) {
+                console.warn("Supabase institution profile sync error:", error);
+            }
+        } catch (e) {
+            console.warn("Supabase profile sync err:", e);
+        }
 
         return updated;
     }
 
     async syncInstitutionProfileFromSupabase() {
         try {
-            const { data, error } = await supabase.from('institution_profile').select('*').limit(1).maybeSingle();
+            const { data, error } = await supabase
+                .from('institution_profile')
+                .select('*')
+                .eq('id', 'primary_institution')
+                .maybeSingle();
+
             if (data && !error) {
                 const current = this.getInstitutionProfile();
-                const merged = { ...current, ...data };
-                localStorage.setItem(STORAGE_KEYS.INSTITUTION_PROFILE, JSON.stringify(merged));
+                // Merge, only overriding if data has truthy values
+                const merged = { ...current };
+                if (data.name) merged.name = data.name;
+                if (data.tagline !== undefined) merged.tagline = data.tagline;
+                if (data.reg_code !== undefined) merged.reg_code = data.reg_code;
+                if (data.email !== undefined) merged.email = data.email;
+                if (data.phone !== undefined) merged.phone = data.phone;
+                if (data.website !== undefined) merged.website = data.website;
+                if (data.address !== undefined) merged.address = data.address;
+                if (data.logo_url) merged.logo_url = data.logo_url;
+                if (data.favicon_url) merged.favicon_url = data.favicon_url;
+                if (data.established_year) merged.established_year = data.established_year;
+
+                try {
+                    localStorage.setItem(STORAGE_KEYS.INSTITUTION_PROFILE, JSON.stringify(merged));
+                } catch (e) {}
                 window.dispatchEvent(new CustomEvent('institutionProfileUpdated', { detail: merged }));
                 return merged;
             }
@@ -240,12 +267,12 @@ export class ErpDataService {
         return this.getInstitutionProfile();
     }
 
-    resetInstitutionProfile() {
+    async resetInstitutionProfile() {
         localStorage.removeItem(STORAGE_KEYS.INSTITUTION_PROFILE);
         const def = this.getInstitutionProfile();
         window.dispatchEvent(new CustomEvent('institutionProfileUpdated', { detail: def }));
         try {
-            supabase.from('institution_profile').delete().eq('id', 'main_institution_profile').then(() => {}).catch(() => {});
+            await supabase.from('institution_profile').delete().eq('id', 'primary_institution');
         } catch (e) {}
         return def;
     }
