@@ -18,13 +18,6 @@ function renderPasses() {
     let passes = erp.getHallPasses();
     const tbody = document.getElementById('hallpass-tbody');
 
-    // Default sample data if empty
-    if (passes.length === 0) {
-        erp.issueHallPass('REG-2026-001', 'Alexander Pierce', 'Dr. Robert Oppenheim', 'Room 204 (Math)', 'Library Book Research', 15);
-        erp.issueHallPass('REG-2026-002', 'Sophia Bennett', 'Prof. Ananya Roy', 'Lab 3 (CS Dept)', 'Algorithm Practical', 15);
-        passes = erp.getHallPasses();
-    }
-
     const inTransit = passes.filter(p => p.status === 'IN_TRANSIT').length;
     const onTime = passes.filter(p => p.status === 'ARRIVED_ON_TIME').length;
     const late = passes.filter(p => p.status === 'LATE_ARRIVAL' || p.flagged_truant).length;

@@ -2,7 +2,7 @@
 import { erp } from './erp_service.js';
 import { showToast, playAudioChime } from './ui.js';
 
-let activeMachineCode = 'DL-PC-01';
+let activeMachineCode = '';
 let currentSessionUser = null;
 let sessionSeconds = 0;
 let sessionInterval = null;
@@ -41,9 +41,25 @@ function initNavigation() {
 
 function initMachineSelector() {
     const select = document.getElementById('active-machine-select');
-    select?.addEventListener('change', (e) => {
+    if (!select) return;
+    
+    const computers = erp.getComputers('ALL');
+    if (computers && computers.length > 0) {
+        select.innerHTML = computers.map(c => `
+            <option value="${c.machine_code}">${c.machine_code} - ${c.lab_name} (${c.status})</option>
+        `).join('');
+        activeMachineCode = computers[0].machine_code;
+    } else {
+        select.innerHTML = `<option value="PC-01">PC-01 (Default Terminal)</option>`;
+        activeMachineCode = 'PC-01';
+    }
+
+    const lockMachineCodeEl = document.getElementById('lockscreen-machine-code');
+    if (lockMachineCodeEl) lockMachineCodeEl.innerText = activeMachineCode;
+
+    select.addEventListener('change', (e) => {
         activeMachineCode = e.target.value;
-        document.getElementById('lockscreen-machine-code').innerText = activeMachineCode;
+        if (lockMachineCodeEl) lockMachineCodeEl.innerText = activeMachineCode;
         logOffCurrentWorkstation();
     });
 }
@@ -65,6 +81,11 @@ function renderAssignments() {
     const assignments = erp.getWorkstationAssignments();
     const computers = erp.getComputers('ALL');
 
+    if (!assignments || assignments.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: var(--text-muted);">No student workstation seat assignments configured.</td></tr>`;
+        return;
+    }
+
     tbody.innerHTML = assignments.map(a => {
         const comp = computers.find(c => c.machine_code === a.machine_code);
         const isOccupied = comp && comp.status === 'IN_USE';
@@ -74,7 +95,7 @@ function renderAssignments() {
                 <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-primary);">${a.machine_code}</td>
                 <td style="font-weight: 700;">${a.student_name}</td>
                 <td style="font-family: var(--font-mono); font-size: 0.85rem;">${a.student_id}</td>
-                <td><span class="badge badge-brand" style="font-size: 0.7rem;">${a.class_name || 'CS-B'}</span></td>
+                <td><span class="badge badge-brand" style="font-size: 0.7rem;">${a.class_name || 'Academic Class'}</span></td>
                 <td>
                     <span class="badge ${isOccupied ? 'badge-warning' : 'badge-success'}">
                         ${isOccupied ? '<span class="badge-dot"></span> LOGGED IN' : 'READY FOR STUDENT'}

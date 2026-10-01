@@ -57,8 +57,8 @@
                         <span class="badge badge-brand" style="font-size: 0.68rem;">SMART CREDENTIAL</span>
                         <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">NFC / Barcode Enabled</span>
                     </div>
-                    <h2 style="font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.25rem;" id="patron-display-name">Welcome, Alexander Pierce</h2>
-                    <p style="color: var(--text-secondary); font-size: 0.88rem; margin: 0;">ID: <strong style="font-family: var(--font-mono); color: var(--brand-primary);" id="patron-display-id">REG-2026-001</strong> • Dept of Computer Science • Main Metropolitan Campus</p>
+                    <h2 style="font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.25rem;" id="patron-display-name">Welcome, Patron</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.88rem; margin: 0;">ID: <strong style="font-family: var(--font-mono); color: var(--brand-primary);" id="patron-display-id">GUEST-001</strong> • Academic Library Portal</p>
                 </div>
 
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -175,9 +175,9 @@
                 </div>
 
                 <div style="margin: 1.25rem 0;">
-                    <div style="font-size: 1.25rem; font-weight: 800;" id="sc-name">Alexander Pierce</div>
-                    <div style="font-family: var(--font-mono); font-size: 0.85rem; opacity: 0.9;" id="sc-id">REG-2026-001</div>
-                    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.2rem;">Computer Science • MMC Campus</div>
+                    <div style="font-size: 1.25rem; font-weight: 800;" id="sc-name">Patron Member</div>
+                    <div style="font-family: var(--font-mono); font-size: 0.85rem; opacity: 0.9;" id="sc-id">GUEST-001</div>
+                    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.2rem;">Academic Library Member</div>
                 </div>
 
                 <div style="background: white; border-radius: 8px; padding: 0.5rem; display: flex; justify-content: center;">
@@ -200,11 +200,11 @@
 
         let currentStudent = {
             id: 's-1',
-            student_id: 'REG-2026-001',
-            name: 'Alexander Pierce',
-            department: 'Computer Science',
-            campus: 'Main Metropolitan Campus',
-            nfc: 'NFC-STU-001'
+            student_id: 'GUEST-001',
+            name: 'Patron Member',
+            department: 'Academic General',
+            campus: 'Main Library',
+            nfc: 'NFC-GUEST-001'
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -282,7 +282,13 @@
         function loadLabStatus() {
             const computers = erp.getComputers('ALL');
             const container = document.getElementById('student-lab-status-list');
+            if (!container) return;
             
+            if (!computers || computers.length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.82rem;">No lab workstations registered.</div>`;
+                return;
+            }
+
             container.innerHTML = computers.slice(0, 4).map(c => `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border-color);">
                     <div>
@@ -299,6 +305,12 @@
         function loadEventPasses() {
             const events = erp.getEvents('ALL');
             const container = document.getElementById('student-event-passes');
+            if (!container) return;
+
+            if (!events || events.length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.82rem;">No upcoming public events scheduled.</div>`;
+                return;
+            }
 
             container.innerHTML = events.map(e => `
                 <div style="background: var(--bg-card); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">

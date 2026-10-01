@@ -29,108 +29,81 @@ const STORAGE_KEYS = {
     CURRENT_CAMPUS: 'erp_active_campus_id'
 };
 
-// Seed initial multi-campus institutional data if not present
+// Seed initial institutional data configuration if not present
 function seedInitialErpData() {
+    // One-time auto-purge for legacy demo records
+    if (!localStorage.getItem('erp_clean_v2_purged')) {
+        localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
+        localStorage.removeItem(STORAGE_KEYS.CHAT_MESSAGES);
+        localStorage.removeItem(STORAGE_KEYS.EVENT_HALLS);
+        localStorage.removeItem(STORAGE_KEYS.COMPUTERS);
+        localStorage.removeItem(STORAGE_KEYS.STAFF);
+        localStorage.removeItem(STORAGE_KEYS.COMPUTER_SESSIONS);
+        localStorage.removeItem(STORAGE_KEYS.PERIOD_SESSIONS);
+        localStorage.removeItem(STORAGE_KEYS.PERIOD_ATTENDANCE);
+        localStorage.removeItem(STORAGE_KEYS.EVENTS);
+        localStorage.removeItem(STORAGE_KEYS.FACILITY_REQUESTS);
+        localStorage.removeItem(STORAGE_KEYS.READING_LOGS);
+        localStorage.removeItem(STORAGE_KEYS.CLASSROOM_SETS);
+        localStorage.removeItem(STORAGE_KEYS.CAMPUS_TRANSFERS);
+        localStorage.removeItem(STORAGE_KEYS.DAMAGE_INCIDENTS);
+        localStorage.removeItem(STORAGE_KEYS.HALL_PASSES);
+        localStorage.removeItem(STORAGE_KEYS.WORKSTATION_ASSIGNMENTS);
+        localStorage.removeItem('erp_kiosk_loans');
+        localStorage.removeItem('erp_event_attendees');
+        localStorage.setItem('erp_clean_v2_purged', 'true');
+    }
+
     if (!localStorage.getItem(STORAGE_KEYS.CAMPUSES)) {
         const initialCampuses = [
-            { id: 'camp-main', name: 'Main Metropolitan Campus', code: 'MMC', city: 'Bangalore', head_name: 'Dr. Arthur Pendelton', email: 'dean.main@tgi.edu', phone: '+91 80 2345 6701' },
-            { id: 'camp-tech', name: 'Technology & Engineering Campus', code: 'TEC', city: 'Whitefield', head_name: 'Prof. Evelyn Reed', email: 'dean.tech@tgi.edu', phone: '+91 80 4123 8900' },
-            { id: 'camp-north', name: 'North Sub-Campus (Life Sciences)', code: 'NSC', city: 'Yelahanka', head_name: 'Dr. Rajiv Menon', email: 'dean.north@tgi.edu', phone: '+91 80 6789 1234' }
+            { id: 'camp-main', name: 'Main Metropolitan Campus', code: 'MMC', city: 'Bangalore', head_name: 'Campus Dean', email: 'dean@tgi.edu', phone: '+91 80 2345 6701' }
         ];
         localStorage.setItem(STORAGE_KEYS.CAMPUSES, JSON.stringify(initialCampuses));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) {
-        const initialNotifs = [
-            { id: 'notif-1', campus_id: 'camp-main', title: 'New Facility Request', message: 'Dr. Robert Oppenheim requested Computer Lab for End-Semester Practical Assessment.', type: 'APPROVAL', unread: true, timestamp: new Date(Date.now() - 10*60*1000).toISOString(), link: 'campus_portal.html' },
-            { id: 'notif-2', campus_id: 'camp-main', title: 'Overdue Book Warning', message: 'Alexander Pierce has 1 loan overdue for "Clean Code". Fine accrued: $15.00.', type: 'OVERDUE', unread: true, timestamp: new Date(Date.now() - 45*60*1000).toISOString(), link: 'reports.html' },
-            { id: 'notif-3', campus_id: 'camp-main', title: 'Upcoming Symposium', message: 'Annual International Tech Symposium 2026 starts in 2 days. 412 seats registered.', type: 'EVENT', unread: true, timestamp: new Date(Date.now() - 2*3600*1000).toISOString(), link: 'events.html' },
-            { id: 'notif-4', campus_id: 'ALL', title: 'Institutional Broadcast', message: 'Extended campus library & lab research hours active during examination month (8:00 AM - 10:00 PM).', type: 'BROADCAST', unread: false, timestamp: new Date(Date.now() - 24*3600*1000).toISOString(), link: 'dashboard' }
-        ];
-        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(initialNotifs));
+        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.CHAT_CHANNELS)) {
         const initialChannels = [
-            { id: 'ch-admin', name: 'Executive Admin & Helpdesk', description: 'Direct desk with Super Admin & Campus Deans', role: 'ADMIN', avatar: 'shield', unread: 1, last_message: 'Your lab terminal request is approved.', last_time: new Date(Date.now() - 5*60*1000).toISOString() },
-            { id: 'ch-library', name: 'Chief Librarian Desk', description: 'Book renewals, shelf reservations & catalog queries', role: 'LIBRARIAN', avatar: 'book-open', unread: 0, last_message: 'The requested book is held at Counter 2.', last_time: new Date(Date.now() - 2*3600*1000).toISOString() },
-            { id: 'ch-lab', name: 'Lab Hardware Support', description: 'Workstation issues, software licenses & GPU access', role: 'LAB_ADMIN', avatar: 'monitor', unread: 0, last_message: 'Terminal DL-PC-01 credentials reset.', last_time: new Date(Date.now() - 24*3600*1000).toISOString() }
+            { id: 'ch-admin', name: 'Executive Admin & Helpdesk', description: 'Direct desk with Super Admin & Campus Deans', role: 'ADMIN', avatar: 'shield', unread: 0, last_message: 'Desk ready.', last_time: new Date().toISOString() },
+            { id: 'ch-library', name: 'Chief Librarian Desk', description: 'Book renewals, shelf reservations & catalog queries', role: 'LIBRARIAN', avatar: 'book-open', unread: 0, last_message: 'Catalog desk online.', last_time: new Date().toISOString() },
+            { id: 'ch-lab', name: 'Lab Hardware Support', description: 'Workstation issues, software licenses & GPU access', role: 'LAB_ADMIN', avatar: 'monitor', unread: 0, last_message: 'Lab system online.', last_time: new Date().toISOString() }
         ];
         localStorage.setItem(STORAGE_KEYS.CHAT_CHANNELS, JSON.stringify(initialChannels));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES)) {
-        const initialMessages = [
-            { id: 'msg-1', channel_id: 'ch-admin', sender_id: 'REG-2026-001', sender_name: 'Alexander Pierce', sender_role: 'STUDENT', text: 'Hello Admin, I need an extension for my research session on DL-PC-02 for an IEEE submission.', is_outgoing: false, timestamp: new Date(Date.now() - 15*60*1000).toISOString() },
-            { id: 'msg-2', channel_id: 'ch-admin', sender_id: 'ADM-001', sender_name: 'Dean Arthur Pendelton', sender_role: 'ADMIN', text: 'Hi Alexander, 60 minutes research extension granted on terminal DL-PC-02. Please ensure attendance is logged.', is_outgoing: true, timestamp: new Date(Date.now() - 5*60*1000).toISOString() }
-        ];
-        localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(initialMessages));
+        localStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.EVENT_HALLS)) {
-        const initialHalls = [
-            { id: 'hall-1', campus_id: 'camp-main', name: 'Dr. APJ Abdul Kalam Auditorium', hall_code: 'AUD-MMC-01', capacity: 650, location: 'Central Block, 3rd Floor', amenities: '4K Projector, Surround Sound, Stage Lights, Live Streaming', status: 'AVAILABLE' },
-            { id: 'hall-2', campus_id: 'camp-main', name: 'Sir CV Raman Seminar Hall', hall_code: 'SEM-MMC-02', capacity: 180, location: 'Academic Wing B', amenities: 'Dual Displays, Wireless Mics, Video Conferencing', status: 'AVAILABLE' },
-            { id: 'hall-3', campus_id: 'camp-tech', name: 'Turing Digital Innovation Amphitheatre', hall_code: 'AMP-TEC-01', capacity: 400, location: 'Tech Tower, 1st Floor', amenities: 'Interactive Smart Board, Acoustic Paneling, Hybrid Setup', status: 'AVAILABLE' }
-        ];
-        localStorage.setItem(STORAGE_KEYS.EVENT_HALLS, JSON.stringify(initialHalls));
+        localStorage.setItem(STORAGE_KEYS.EVENT_HALLS, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.COMPUTERS)) {
-        const initialComputers = [
-            // Main Campus Lab 1
-            { id: 'comp-1', campus_id: 'camp-main', lab_name: 'Digital Library & Research Lab', machine_code: 'DL-PC-01', ip_address: '192.168.10.101', specs: 'Intel i7, 32GB RAM, 1TB SSD, 4K Display', status: 'AVAILABLE' },
-            { id: 'comp-2', campus_id: 'camp-main', lab_name: 'Digital Library & Research Lab', machine_code: 'DL-PC-02', ip_address: '192.168.10.102', specs: 'Intel i7, 32GB RAM, 1TB SSD, 4K Display', status: 'IN_USE', current_user_name: 'Alexander Pierce', current_user_id: 'REG-2026-001', session_start: new Date(Date.now() - 45*60*1000).toISOString() },
-            { id: 'comp-3', campus_id: 'camp-main', lab_name: 'Digital Library & Research Lab', machine_code: 'DL-PC-03', ip_address: '192.168.10.103', specs: 'Intel i5, 16GB RAM, 512GB SSD', status: 'AVAILABLE' },
-            { id: 'comp-4', campus_id: 'camp-main', lab_name: 'Digital Library & Research Lab', machine_code: 'DL-PC-04', ip_address: '192.168.10.104', specs: 'Intel i5, 16GB RAM, 512GB SSD', status: 'MAINTENANCE' },
-            // Tech Campus AI Lab
-            { id: 'comp-5', campus_id: 'camp-tech', lab_name: 'High-Performance Computing Lab', machine_code: 'HPC-PC-01', ip_address: '10.20.1.50', specs: 'AMD Ryzen 9, RTX 4080 GPU, 64GB RAM', status: 'AVAILABLE' },
-            { id: 'comp-6', campus_id: 'camp-tech', lab_name: 'High-Performance Computing Lab', machine_code: 'HPC-PC-02', ip_address: '10.20.1.51', specs: 'AMD Ryzen 9, RTX 4080 GPU, 64GB RAM', status: 'AVAILABLE' }
-        ];
-        localStorage.setItem(STORAGE_KEYS.COMPUTERS, JSON.stringify(initialComputers));
+        localStorage.setItem(STORAGE_KEYS.COMPUTERS, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.STAFF)) {
-        const initialStaff = [
-            { id: 'staff-1', campus_id: 'camp-main', department_id: 'dept-cs', employee_id: 'FAC-001', name: 'Dr. Robert Oppenheim', designation: 'Professor & Head of Dept', email: 'robert.o@tgi.edu', phone: '+91 98450 11223', role: 'TEACHER', nfc_tag_id: 'NFC-FAC-001', qr_code: 'QR-FAC-001', status: 'ACTIVE' },
-            { id: 'staff-2', campus_id: 'camp-main', department_id: 'dept-lib', employee_id: 'LIB-001', name: 'Claire Dupont', designation: 'Chief Librarian', email: 'claire.d@tgi.edu', phone: '+91 98450 33445', role: 'LIBRARIAN', nfc_tag_id: 'NFC-LIB-001', qr_code: 'QR-LIB-001', status: 'ACTIVE' },
-            { id: 'staff-3', campus_id: 'camp-main', department_id: 'dept-admin', employee_id: 'ADM-001', name: 'Dr. Arthur Pendelton', designation: 'Executive Campus Head', email: 'dean.main@tgi.edu', phone: '+91 98450 55667', role: 'CAMPUS_HEAD', nfc_tag_id: 'NFC-ADM-001', qr_code: 'QR-ADM-001', status: 'ACTIVE' },
-            { id: 'staff-4', campus_id: 'camp-tech', department_id: 'dept-lab', employee_id: 'LAB-001', name: 'Marcus Vance', designation: 'Senior Lab Administrator', email: 'marcus.v@tgi.edu', phone: '+91 98450 77889', role: 'LAB_ADMIN', nfc_tag_id: 'NFC-LAB-001', qr_code: 'QR-LAB-001', status: 'ACTIVE' }
-        ];
-        localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(initialStaff));
+        localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.COMPUTER_SESSIONS)) {
-        const sampleSessions = [
-            { id: 'cs-1', computer_id: 'comp-1', machine_code: 'DL-PC-01', campus_id: 'camp-main', student_name: 'Alexander Pierce', student_id: 'REG-2026-001', start_time: new Date(Date.now() - 3*3600*1000).toISOString(), end_time: new Date(Date.now() - 1.5*3600*1000).toISOString(), duration_minutes: 90, purpose: 'IEEE Journal Research', status: 'COMPLETED' },
-            { id: 'cs-2', computer_id: 'comp-3', machine_code: 'DL-PC-03', campus_id: 'camp-main', student_name: 'Sophia Bennett', student_id: 'REG-2026-002', start_time: new Date(Date.now() - 5*3600*1000).toISOString(), end_time: new Date(Date.now() - 3.5*3600*1000).toISOString(), duration_minutes: 90, purpose: 'Algorithm Simulation', status: 'COMPLETED' },
-            { id: 'cs-3', computer_id: 'comp-5', machine_code: 'HPC-PC-01', campus_id: 'camp-tech', student_name: 'Liam Zhang', student_id: 'REG-2026-003', start_time: new Date(Date.now() - 24*3600*1000).toISOString(), end_time: new Date(Date.now() - 21.5*3600*1000).toISOString(), duration_minutes: 150, purpose: 'Deep Learning Model Training', status: 'COMPLETED' }
-        ];
-        localStorage.setItem(STORAGE_KEYS.COMPUTER_SESSIONS, JSON.stringify(sampleSessions));
+        localStorage.setItem(STORAGE_KEYS.COMPUTER_SESSIONS, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.PERIOD_SESSIONS)) {
-        const samplePeriods = [
-            { id: 'per-1', campus_id: 'camp-main', facility_type: 'LIBRARY', department_name: 'Computer Science', class_name: 'CS-A 2026', teacher_name: 'Dr. Robert Oppenheim', period_name: 'Period 3 (10:30 AM - 11:30 AM)', date: new Date().toISOString().split('T')[0], topic: 'Operating Systems Literature Survey', total_students: 45, present_count: 42, status: 'COMPLETED' },
-            { id: 'per-2', campus_id: 'camp-main', facility_type: 'COMPUTER_LAB', department_name: 'Computer Science', class_name: 'CS-B 2026', teacher_name: 'Prof. Ananya Roy', period_name: 'Period 5 (01:30 PM - 02:30 PM)', date: new Date().toISOString().split('T')[0], topic: 'Data Structures Practical Lab', total_students: 40, present_count: 38, status: 'ACTIVE' }
-        ];
-        localStorage.setItem(STORAGE_KEYS.PERIOD_SESSIONS, JSON.stringify(samplePeriods));
+        localStorage.setItem(STORAGE_KEYS.PERIOD_SESSIONS, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.EVENTS)) {
-        const sampleEvents = [
-            { id: 'ev-1', campus_id: 'camp-main', hall_id: 'hall-1', hall_name: 'Dr. APJ Abdul Kalam Auditorium', title: 'Annual International Tech Symposium 2026', description: 'Keynotes from global researchers on AI, Robotics, and Quantum Computing', organizer_name: 'School of Computing & TGI Library', conductor_name: 'Dr. Robert Oppenheim', start_datetime: new Date(Date.now() + 2*86400*1000).toISOString(), end_datetime: new Date(Date.now() + 2*86400*1000 + 4*3600*1000).toISOString(), expected_attendees: 500, registered_count: 412, status: 'APPROVED' },
-            { id: 'ev-2', campus_id: 'camp-main', hall_id: 'hall-2', hall_name: 'Sir CV Raman Seminar Hall', title: 'Author Interaction: Clean Code & Architecture', description: 'Interactive workshop with guest technical authors and live Q&A', organizer_name: 'Central Library Council', conductor_name: 'Claire Dupont', start_datetime: new Date(Date.now() + 5*86400*1000).toISOString(), end_datetime: new Date(Date.now() + 5*86400*1000 + 2*3600*1000).toISOString(), expected_attendees: 150, registered_count: 140, status: 'APPROVED' }
-        ];
-        localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(sampleEvents));
+        localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.FACILITY_REQUESTS)) {
-        const sampleRequests = [
-            { id: 'req-1', campus_id: 'camp-main', requester_name: 'Dr. Robert Oppenheim', role: 'Faculty / HOD', facility_type: 'COMPUTER_LAB', target_date: new Date(Date.now() + 86400*1000).toISOString().split('T')[0], period_time: '11:30 AM - 01:00 PM', reason: 'Conducting End-Semester Practical Coding Assessment for 45 students', status: 'PENDING', created_at: new Date().toISOString() },
-            { id: 'req-2', campus_id: 'camp-main', requester_name: 'Prof. Rajesh Sharma', role: 'Event Coordinator', facility_type: 'EVENT_HALL', target_date: new Date(Date.now() + 4*86400*1000).toISOString().split('T')[0], period_time: '02:00 PM - 05:00 PM', reason: 'Inter-College Hackathon Opening Ceremony', status: 'APPROVED', approved_by: 'Dr. Arthur Pendelton', created_at: new Date().toISOString() }
-        ];
-        localStorage.setItem(STORAGE_KEYS.FACILITY_REQUESTS, JSON.stringify(sampleRequests));
+        localStorage.setItem(STORAGE_KEYS.FACILITY_REQUESTS, JSON.stringify([]));
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.PERMISSIONS)) {
@@ -1003,14 +976,7 @@ export class ErpDataService {
     }
 
     getWorkstationAssignments() {
-        const defaultAssignments = [
-            { machine_code: 'DL-PC-01', student_id: 'REG-2026-001', student_name: 'Alexander Pierce', class_name: 'CS-B 2026' },
-            { machine_code: 'DL-PC-02', student_id: 'REG-2026-002', student_name: 'Sophia Bennett', class_name: 'CS-B 2026' },
-            { machine_code: 'DL-PC-03', student_id: 'REG-2026-003', student_name: 'Liam Zhang', class_name: 'CS-B 2026' },
-            { machine_code: 'DL-PC-04', student_id: 'REG-2026-004', student_name: 'Emma Watson', class_name: 'CS-B 2026' },
-            { machine_code: 'HPC-PC-01', student_id: 'REG-2026-005', student_name: 'Noah Miller', class_name: 'CS-B 2026' }
-        ];
-        return JSON.parse(localStorage.getItem(STORAGE_KEYS.WORKSTATION_ASSIGNMENTS) || JSON.stringify(defaultAssignments));
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.WORKSTATION_ASSIGNMENTS) || '[]');
     }
 
     assignStudentToMachine(machineCode, studentId, studentName, className = 'CS-B 2026') {

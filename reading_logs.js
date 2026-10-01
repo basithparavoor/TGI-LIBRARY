@@ -73,14 +73,12 @@ function renderReadingLogs() {
     const logs = erp.getReadingLogs();
     const tbody = document.getElementById('reading-logs-tbody');
 
-    // Default sample logs if empty
-    if (logs.length === 0) {
-        erp.logReadingSession('REG-2026-001', 'Alexander Pierce', 'Clean Code', 45, 60, 'Great insights on functions');
-        erp.logReadingSession('REG-2026-002', 'Sophia Bennett', 'Introduction to Algorithms', 30, 45, 'Completed graph theory chapter');
+    if (!logs || logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: var(--text-muted);">No student reading logs recorded yet.</td></tr>`;
+        return;
     }
 
-    const currentLogs = erp.getReadingLogs();
-    tbody.innerHTML = currentLogs.map(l => {
+    tbody.innerHTML = logs.map(l => {
         let badge = `<span class="badge badge-brand"><span class="badge-dot"></span> Bronze Reader</span>`;
         if (l.pages_read > 30) badge = `<span class="badge badge-success"><span class="badge-dot"></span> Silver Scholar</span>`;
         if (l.pages_read > 60) badge = `<span class="badge" style="background: rgba(245,158,11,0.1); color: var(--color-warning);"><span class="badge-dot"></span> Gold Master</span>`;
@@ -105,10 +103,9 @@ function renderClassroomSets(campusId) {
     let sets = erp.getClassroomSets(campusId);
     const tbody = document.getElementById('classroom-sets-tbody');
 
-    if (sets.length === 0) {
-        erp.borrowClassroomSet('FAC-001', 'Dr. Robert Oppenheim', 'Shakespeare: Macbeth (Classroom Pack)', 35, 'Grade 10-A');
-        erp.borrowClassroomSet('FAC-002', 'Prof. Ananya Roy', 'Data Structures in C++ (Lab Set)', 40, 'CS-B 2026');
-        sets = erp.getClassroomSets(campusId);
+    if (!sets || sets.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="padding: 2.5rem; text-align: center; color: var(--text-muted);">No bulk classroom book sets currently issued.</td></tr>`;
+        return;
     }
 
     tbody.innerHTML = sets.map(s => {
@@ -148,14 +145,14 @@ function renderTransfers(campusId) {
     const tbody = document.getElementById('transfers-tbody');
     const campuses = erp.getCampuses();
 
-    if (transfers.length === 0) {
-        erp.createCampusTransfer('camp-main', 'camp-tech', 'High-Performance Python for Engineers', 15, 'Tech Dept HOD', 'Advanced practical curriculum');
-        transfers = erp.getCampusTransfers(campusId);
+    if (!transfers || transfers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="padding: 2.5rem; text-align: center; color: var(--text-muted);">No inter-campus book transfers active.</td></tr>`;
+        return;
     }
 
     tbody.innerHTML = transfers.map(t => {
-        const fromName = campuses.find(c => c.id === t.from_campus)?.code || 'MMC';
-        const toName = campuses.find(c => c.id === t.to_campus)?.code || 'TEC';
+        const fromName = campuses.find(c => c.id === t.from_campus)?.code || 'Main';
+        const toName = campuses.find(c => c.id === t.to_campus)?.code || 'Branch';
         const inTransit = t.status === 'IN_TRANSIT_COURIER';
 
         return `
@@ -163,8 +160,8 @@ function renderTransfers(campusId) {
                 <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-primary);">${t.id}</td>
                 <td style="font-weight: 700;">${t.book_title}</td>
                 <td style="font-family: var(--font-mono); font-weight: 700;">${t.quantity} copies</td>
-                <td><span class="badge badge-brand">${fromName} Branch</span></td>
-                <td><span class="badge badge-success">${toName} Branch</span></td>
+                <td><span class="badge badge-brand">${fromName}</span></td>
+                <td><span class="badge badge-success">${toName}</span></td>
                 <td><span class="badge ${inTransit ? 'badge-warning' : 'badge-success'}">${inTransit ? 'VAN COURIER' : 'DELIVERED'}</span></td>
                 <td style="text-align: right;">
                     ${inTransit ? `
@@ -191,9 +188,9 @@ function renderDamageAudits(campusId) {
     let damageRecords = erp.getDamageIncidents(campusId);
     const tbody = document.getElementById('damage-tbody');
 
-    if (damageRecords.length === 0) {
-        erp.reportDamageIncident('BK-00101', 'Clean Code', 'REG-2026-001', 'Alexander Pierce', 'PAGES_TORN', 'Pages 45-50 loose. Student provided replacement copy.', 'REPLACED_BY_STUDENT');
-        damageRecords = erp.getDamageIncidents(campusId);
+    if (!damageRecords || damageRecords.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: var(--text-muted);">No damaged book incident reports recorded.</td></tr>`;
+        return;
     }
 
     tbody.innerHTML = damageRecords.map(d => `

@@ -105,16 +105,10 @@ window.selectPeriodSession = async function(sessionId) {
             .select('id, name, student_id, place')
             .limit(50);
 
-        currentClassStudents = (students && students.length > 0) ? students : [
-            { id: 'st-1', name: 'Alexander Pierce', student_id: 'REG-2026-001' },
-            { id: 'st-2', name: 'Sophia Bennett', student_id: 'REG-2026-002' },
-            { id: 'st-3', name: 'Liam Zhang', student_id: 'REG-2026-003' },
-            { id: 'st-4', name: 'Aarav Patel', student_id: 'REG-2026-004' },
-            { id: 'st-5', name: 'Emma Watson', student_id: 'REG-2026-005' }
-        ];
-
+        currentClassStudents = (students && students.length > 0) ? students : [];
         renderRosterList();
     } catch (e) {
+        currentClassStudents = [];
         renderRosterList();
     }
 };
@@ -124,6 +118,16 @@ function renderRosterList() {
     const existingAttendance = erp.getPeriodAttendance(activePeriodId);
     const attendanceMap = new Map();
     existingAttendance.forEach(a => attendanceMap.set(a.student_id, a));
+
+    if (!currentClassStudents || currentClassStudents.length === 0) {
+        rosterList.innerHTML = `<div style="padding: 2.5rem; text-align: center; color: var(--text-muted); font-size: 0.88rem;">
+            <i data-lucide="users" style="width: 32px; height: 32px; margin-bottom: 0.5rem; opacity: 0.4;"></i>
+            <div>No enrolled students found in database.</div>
+            <div style="font-size: 0.75rem; margin-top: 0.25rem;">Add students via the Students directory to take roll call.</div>
+        </div>`;
+        if (window.lucide) lucide.createIcons();
+        return;
+    }
 
     rosterList.innerHTML = currentClassStudents.map(st => {
         const record = attendanceMap.get(st.student_id);

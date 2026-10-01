@@ -78,9 +78,9 @@ function initNavigation() {
         
         activeStudent = found || {
             id: `s-${Date.now()}`,
-            name: 'Alexander Pierce',
+            name: `Patron (${val})`,
             student_id: val,
-            department: 'Computer Science'
+            department: 'Academic Member'
         };
 
         document.getElementById('kiosk-student-info').innerText = `Student: ${activeStudent.name} (${activeStudent.student_id})`;
@@ -250,17 +250,10 @@ window.removeCartItem = function(idx) {
 };
 
 function getBookTitleFromBarcode(barcode) {
-    const titles = [
-        'Clean Code: A Handbook of Agile Software Craftsmanship',
-        'Introduction to Algorithms (CLRS 4th Edition)',
-        'Operating System Concepts & Distributed Architecture',
-        'Design Patterns: Elements of Reusable Object-Oriented Software',
-        'Artificial Intelligence: A Modern Approach',
-        'Computer Networking: A Top-Down Approach'
-    ];
-    let hash = 0;
-    for (let i = 0; i < barcode.length; i++) hash += barcode.charCodeAt(i);
-    return titles[hash % titles.length];
+    const books = JSON.parse(localStorage.getItem('erp_books') || '[]');
+    const found = books.find(b => b.isbn === barcode || b.barcode === barcode);
+    if (found) return found.title;
+    return `Item / Resource [${barcode}]`;
 }
 
 function initHardwareReaders() {
