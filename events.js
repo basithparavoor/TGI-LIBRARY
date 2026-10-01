@@ -55,6 +55,8 @@ function initTabs() {
 function initCampusDropdowns() {
     const campuses = erp.getCampuses();
     const evCampusSelect = document.getElementById('ev-campus');
+    const hallCampusSelect = document.getElementById('hall-campus');
+
     if (evCampusSelect) {
         evCampusSelect.innerHTML = campuses.map(c => `<option value="${c.id}">${c.name} (${c.code})</option>`).join('');
         evCampusSelect.value = erp.getActiveCampusId() !== 'ALL' ? erp.getActiveCampusId() : (campuses[0]?.id || '');
@@ -63,6 +65,11 @@ function initCampusDropdowns() {
         evCampusSelect.addEventListener('change', (e) => {
             updateHallOptions(e.target.value);
         });
+    }
+
+    if (hallCampusSelect) {
+        hallCampusSelect.innerHTML = campuses.map(c => `<option value="${c.id}">${c.name} (${c.code})</option>`).join('');
+        hallCampusSelect.value = erp.getActiveCampusId() !== 'ALL' ? erp.getActiveCampusId() : (campuses[0]?.id || '');
     }
 }
 
@@ -174,9 +181,12 @@ function renderEventsGrid(events) {
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
+                <div style="display: flex; gap: 0.4rem; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
                     <button class="btn btn-outline btn-open-conductor" data-id="${e.id}" style="flex: 1; font-size: 0.8rem; padding: 0.45rem;">
                         <i data-lucide="scan-line" style="width: 14px;"></i> Check-in Desk
+                    </button>
+                    <button class="btn btn-outline btn-edit-event" data-id="${e.id}" style="padding: 0.45rem 0.6rem; color: var(--brand-primary);" title="Edit Event">
+                        <i data-lucide="edit-3" style="width: 14px;"></i>
                     </button>
                     <button class="btn btn-outline btn-delete-event" data-id="${e.id}" style="color: var(--color-danger); padding: 0.45rem 0.6rem;" title="Cancel Event">
                         <i data-lucide="trash-2" style="width: 14px;"></i>
@@ -196,6 +206,30 @@ function renderEventsGrid(events) {
         });
     });
 
+    container.querySelectorAll('.btn-edit-event').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const eventId = btn.dataset.id;
+            const ev = erp.getEvents('ALL').find(item => item.id === eventId);
+            if (!ev) return;
+
+            document.getElementById('modal-event-title').innerText = 'Edit Institutional Event';
+            document.getElementById('ev-id').value = ev.id;
+            document.getElementById('ev-title').value = ev.title;
+            document.getElementById('ev-campus').value = ev.campus_id;
+            updateHallOptions(ev.campus_id);
+            document.getElementById('ev-hall').value = ev.hall_id;
+            document.getElementById('ev-start').value = ev.start_datetime ? new Date(ev.start_datetime).toISOString().slice(0, 16) : '';
+            document.getElementById('ev-end').value = ev.end_datetime ? new Date(ev.end_datetime).toISOString().slice(0, 16) : '';
+            document.getElementById('ev-organizer').value = ev.organizer_name || '';
+            document.getElementById('ev-conductor').value = ev.conductor_name || '';
+            document.getElementById('ev-capacity').value = ev.expected_attendees || 300;
+            document.getElementById('ev-status').value = ev.status || 'APPROVED';
+            document.getElementById('ev-desc').value = ev.description || '';
+
+            document.getElementById('modal-event').style.display = 'flex';
+        });
+    });
+
     container.querySelectorAll('.btn-delete-event').forEach(btn => {
         btn.addEventListener('click', () => {
             if (confirm('Are you sure you want to cancel and remove this event?')) {
@@ -212,30 +246,79 @@ function renderEventsGrid(events) {
 function renderHallsGrid(halls) {
     const container = document.getElementById('halls-card-grid');
     if (halls.length === 0) {
-        container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2rem;">No auditoriums registered for this campus.</div>`;
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 3rem; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px dashed var(--border-color);">
+                <i data-lucide="door-closed" style="width: 36px; height: 36px; opacity: 0.4; margin-bottom: 0.5rem;"></i>
+                <div style="font-weight: 600; color: var(--text-primary);">No auditoriums registered for this campus</div>
+                <p style="font-size: 0.85rem; margin-top: 0.25rem;">Click "Register Venue / Hall" above to add an event hall.</p>
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons();
         return;
     }
 
     container.innerHTML = halls.map(h => `
-        <div class="card card-glass">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                <span class="badge badge-brand">${h.hall_code}</span>
-                <span class="badge badge-success"><span class="badge-dot"></span> ${h.status}</span>
-            </div>
-            <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.25rem;">${h.name}</h3>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">${h.location}</p>
+        <div class="card card-glass" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                    <span class="badge badge-brand">${h.hall_code}</span>
+                    <span class="badge ${h.status === 'AVAILABLE' ? 'badge-success' : 'badge-warning'}"><span class="badge-dot"></span> ${h.status}</span>
+                </div>
+                <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.25rem;">${h.name}</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">${h.location || 'Campus Facility'}</p>
 
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
-                <div style="background: rgba(59, 130, 246, 0.08); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; color: var(--brand-primary); display: flex; align-items: center; gap: 0.3rem;">
-                    <i data-lucide="users" style="width: 14px;"></i> Capacity: ${h.capacity} seats
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <div style="background: rgba(59, 130, 246, 0.08); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; color: var(--brand-primary); display: flex; align-items: center; gap: 0.3rem;">
+                        <i data-lucide="users" style="width: 14px;"></i> Capacity: ${h.capacity} seats
+                    </div>
+                </div>
+
+                <div style="font-size: 0.78rem; color: var(--text-secondary); background: var(--bg-hover); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">
+                    <strong>Amenities:</strong> ${h.amenities || 'Standard AV & Stage setup'}
                 </div>
             </div>
 
-            <div style="font-size: 0.78rem; color: var(--text-secondary); background: var(--bg-hover); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm);">
-                <strong>Amenities:</strong> ${h.amenities || 'Standard AV & Stage setup'}
+            <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                <button class="btn btn-outline btn-sm btn-edit-hall" data-id="${h.id}" style="flex: 1; font-size: 0.8rem;">
+                    <i data-lucide="edit-3" style="width: 14px;"></i> Edit Venue
+                </button>
+                <button class="btn btn-outline btn-sm btn-delete-hall" data-id="${h.id}" style="color: var(--color-danger); padding: 0.4rem 0.6rem;" title="Delete Venue">
+                    <i data-lucide="trash-2" style="width: 14px;"></i>
+                </button>
             </div>
         </div>
     `).join('');
+
+    // Attach Hall Actions
+    container.querySelectorAll('.btn-edit-hall').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const hallId = btn.dataset.id;
+            const hall = erp.getEventHalls('ALL').find(item => item.id === hallId);
+            if (!hall) return;
+
+            document.getElementById('modal-hall-title').innerText = 'Edit Venue / Hall';
+            document.getElementById('hall-id').value = hall.id;
+            document.getElementById('hall-name').value = hall.name;
+            document.getElementById('hall-code').value = hall.hall_code;
+            document.getElementById('hall-capacity').value = hall.capacity;
+            document.getElementById('hall-campus').value = hall.campus_id || erp.getActiveCampusId();
+            document.getElementById('hall-status').value = hall.status || 'AVAILABLE';
+            document.getElementById('hall-location').value = hall.location || '';
+            document.getElementById('hall-amenities').value = hall.amenities || '';
+
+            document.getElementById('modal-hall').style.display = 'flex';
+        });
+    });
+
+    container.querySelectorAll('.btn-delete-hall').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete this venue / hall?')) {
+                erp.deleteEventHall(btn.dataset.id);
+                showToast('Venue deleted successfully', 'info');
+                renderAll();
+            }
+        });
+    });
 
     if (window.lucide) lucide.createIcons();
 }
@@ -411,9 +494,13 @@ function setupEventListeners() {
         }
     });
 
-    // Schedule Event Modal
+    // Schedule / Edit Event Modal
     const modalEvent = document.getElementById('modal-event');
     document.getElementById('btn-new-event')?.addEventListener('click', () => {
+        document.getElementById('modal-event-title').innerText = 'Schedule Institutional Event';
+        document.getElementById('ev-id').value = '';
+        document.getElementById('form-event').reset();
+
         // Set default start datetime to tomorrow 10:00 AM
         const tomorrow = new Date(Date.now() + 86400 * 1000);
         tomorrow.setHours(10, 0, 0, 0);
@@ -429,12 +516,14 @@ function setupEventListeners() {
 
     document.getElementById('form-event')?.addEventListener('submit', (e) => {
         e.preventDefault();
+        const evId = document.getElementById('ev-id').value;
         const campusId = document.getElementById('ev-campus').value;
         const hallSelect = document.getElementById('ev-hall');
         const hallId = hallSelect.value;
         const hallName = hallSelect.options[hallSelect.selectedIndex]?.text.split(' (')[0] || 'Auditorium';
 
-        const newEvent = {
+        const eventData = {
+            id: evId || undefined,
             campus_id: campusId,
             hall_id: hallId,
             hall_name: hallName,
@@ -445,12 +534,52 @@ function setupEventListeners() {
             start_datetime: new Date(document.getElementById('ev-start').value).toISOString(),
             end_datetime: new Date(document.getElementById('ev-end').value).toISOString(),
             expected_attendees: parseInt(document.getElementById('ev-capacity').value) || 300,
-            status: 'APPROVED'
+            status: document.getElementById('ev-status').value || 'APPROVED'
         };
 
-        erp.createEvent(newEvent);
-        showToast('Event scheduled successfully!', 'success');
+        if (evId) {
+            erp.updateEvent(eventData);
+            showToast('Event updated successfully!', 'success');
+        } else {
+            erp.createEvent(eventData);
+            showToast('Event scheduled successfully!', 'success');
+        }
         modalEvent.style.display = 'none';
+        renderAll();
+    });
+
+    // Venue / Hall Add & Edit Modal
+    const modalHall = document.getElementById('modal-hall');
+    document.getElementById('btn-new-hall')?.addEventListener('click', () => {
+        document.getElementById('modal-hall-title').innerText = 'Register Auditorium / Venue';
+        document.getElementById('hall-id').value = '';
+        document.getElementById('form-hall').reset();
+        document.getElementById('hall-campus').value = erp.getActiveCampusId() !== 'ALL' ? erp.getActiveCampusId() : 'camp-main';
+        document.getElementById('hall-capacity').value = '200';
+        modalHall.style.display = 'flex';
+    });
+
+    document.getElementById('btn-close-hall-modal')?.addEventListener('click', () => modalHall.style.display = 'none');
+    document.getElementById('btn-cancel-hall')?.addEventListener('click', () => modalHall.style.display = 'none');
+
+    document.getElementById('form-hall')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const hallId = document.getElementById('hall-id').value;
+        const hallData = {
+            id: hallId || undefined,
+            name: document.getElementById('hall-name').value.trim(),
+            hall_code: document.getElementById('hall-code').value.trim().toUpperCase(),
+            capacity: parseInt(document.getElementById('hall-capacity').value) || 100,
+            campus_id: document.getElementById('hall-campus').value,
+            status: document.getElementById('hall-status').value,
+            location: document.getElementById('hall-location').value.trim(),
+            amenities: document.getElementById('hall-amenities').value.trim()
+        };
+
+        erp.saveEventHall(hallData);
+        showToast(hallId ? 'Venue updated successfully!' : 'Venue registered successfully!', 'success');
+        modalHall.style.display = 'none';
+        initCampusDropdowns();
         renderAll();
     });
 

@@ -108,6 +108,13 @@
 
                 <!-- TAB 2: Halls & Venues -->
                 <div id="section-halls" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+                        <div>
+                            <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Auditoriums & Event Halls</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Campus venues, seating limits, and AV facility specifications</p>
+                        </div>
+                        <button class="btn btn-primary" id="btn-new-hall"><i data-lucide="plus" style="width: 16px;"></i> Register Venue / Hall</button>
+                    </div>
                     <div id="halls-card-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem;">
                         <!-- Injected dynamically -->
                     </div>
@@ -185,14 +192,15 @@
                     </div>
                 </div>
 
-                <!-- MODAL: Schedule New Event -->
+                <!-- MODAL: Schedule / Edit Event -->
                 <div id="modal-event" class="modal-backdrop" style="display: none;">
                     <div class="modal card card-glass" style="max-width: 600px; width: 95%;">
                         <div class="modal-header">
-                            <h3 class="modal-title">Schedule Institutional Event</h3>
+                            <h3 class="modal-title" id="modal-event-title">Schedule Institutional Event</h3>
                             <button class="modal-close" id="btn-close-event-modal">&times;</button>
                         </div>
                         <form id="form-event" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                            <input type="hidden" id="ev-id" value="">
                             <div class="input-group" style="margin-bottom: 0;">
                                 <label>Event Title *</label>
                                 <input type="text" id="ev-title" placeholder="e.g. AI & Robotics Symposium 2026" required>
@@ -235,9 +243,19 @@
                                 </div>
                             </div>
 
-                            <div class="input-group" style="margin-bottom: 0;">
-                                <label>Max Capacity / Seat Limit</label>
-                                <input type="number" id="ev-capacity" placeholder="e.g. 500" value="300">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="input-group" style="margin-bottom: 0;">
+                                    <label>Max Capacity / Seat Limit</label>
+                                    <input type="number" id="ev-capacity" placeholder="e.g. 500" value="300">
+                                </div>
+                                <div class="input-group" style="margin-bottom: 0;">
+                                    <label>Status</label>
+                                    <select id="ev-status">
+                                        <option value="APPROVED">Approved & Live</option>
+                                        <option value="PENDING_APPROVAL">Pending Approval</option>
+                                        <option value="COMPLETED">Completed</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div class="input-group" style="margin-bottom: 0;">
@@ -247,7 +265,67 @@
 
                             <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
                                 <button type="button" class="btn btn-outline" id="btn-cancel-event">Cancel</button>
-                                <button type="submit" class="btn btn-primary"><i data-lucide="check" style="width: 16px;"></i> Schedule & Publish</button>
+                                <button type="submit" class="btn btn-primary" id="btn-submit-event"><i data-lucide="check" style="width: 16px;"></i> Save Event</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- MODAL: Add / Edit Venue (Hall) -->
+                <div id="modal-hall" class="modal-backdrop" style="display: none;">
+                    <div class="modal card card-glass" style="max-width: 540px; width: 95%;">
+                        <div class="modal-header">
+                            <h3 class="modal-title" id="modal-hall-title">Register Auditorium / Venue</h3>
+                            <button class="modal-close" id="btn-close-hall-modal">&times;</button>
+                        </div>
+                        <form id="form-hall" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                            <input type="hidden" id="hall-id" value="">
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label>Venue / Hall Name *</label>
+                                <input type="text" id="hall-name" placeholder="e.g. Dr. APJ Abdul Kalam Auditorium" required>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="input-group" style="margin-bottom: 0;">
+                                    <label>Hall Code *</label>
+                                    <input type="text" id="hall-code" placeholder="e.g. AUD-MMC-01" required>
+                                </div>
+                                <div class="input-group" style="margin-bottom: 0;">
+                                    <label>Seating Capacity *</label>
+                                    <input type="number" id="hall-capacity" placeholder="e.g. 500" value="200" required min="1">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div class="input-group" style="margin-bottom: 0;">
+                                    <label>Campus Assignment</label>
+                                    <select id="hall-campus" required>
+                                        <!-- Injected dynamically -->
+                                    </select>
+                                </div>
+                                <div class="input-group" style="margin-bottom: 0;">
+                                    <label>Status</label>
+                                    <select id="hall-status">
+                                        <option value="AVAILABLE">AVAILABLE</option>
+                                        <option value="MAINTENANCE">MAINTENANCE</option>
+                                        <option value="BOOKED">BOOKED</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label>Physical Location / Floor</label>
+                                <input type="text" id="hall-location" placeholder="e.g. Central Block, 3rd Floor">
+                            </div>
+
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label>AV Facilities & Amenities</label>
+                                <textarea id="hall-amenities" rows="2" placeholder="e.g. 4K Projector, Surround Sound, Stage Lights, Live Streaming"></textarea>
+                            </div>
+
+                            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+                                <button type="button" class="btn btn-outline" id="btn-cancel-hall">Cancel</button>
+                                <button type="submit" class="btn btn-primary"><i data-lucide="save" style="width: 16px;"></i> Save Venue</button>
                             </div>
                         </form>
                     </div>

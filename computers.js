@@ -86,9 +86,17 @@ function renderWorkstations() {
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
                         <span style="font-family: var(--font-mono); font-weight: 800; font-size: 1.1rem; color: var(--text-primary);">${comp.machine_code}</span>
-                        <span class="badge ${isOccupied ? 'badge-brand' : isMaint ? 'badge-warning' : 'badge-success'}" style="font-size: 0.65rem;">
-                            <span class="badge-dot"></span> ${comp.status.replace('_', ' ')}
-                        </span>
+                        <div style="display: flex; align-items: center; gap: 0.35rem;">
+                            <span class="badge ${isOccupied ? 'badge-brand' : isMaint ? 'badge-warning' : 'badge-success'}" style="font-size: 0.65rem;">
+                                <span class="badge-dot"></span> ${comp.status.replace('_', ' ')}
+                            </span>
+                            <button class="btn btn-ghost btn-icon btn-sm" style="padding: 2px 4px; color: var(--text-muted);" title="Edit Machine" onclick="window.editWorkstation('${comp.id}')">
+                                <i data-lucide="edit-3" style="width: 13px;"></i>
+                            </button>
+                            <button class="btn btn-ghost btn-icon btn-sm" style="padding: 2px 4px; color: var(--danger);" title="Delete Machine" onclick="window.deleteWorkstation('${comp.id}', '${comp.machine_code}')">
+                                <i data-lucide="trash-2" style="width: 13px;"></i>
+                            </button>
+                        </div>
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">${comp.lab_name}</div>
                     <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Specs: ${comp.specs || 'Standard PC'}</div>
@@ -105,7 +113,7 @@ function renderWorkstations() {
                             <i data-lucide="log-out" style="width: 12px;"></i> End Session
                         </button>
                     ` : isMaint ? `
-                        <div style="font-size: 0.75rem; color: var(--warning); font-weight: 600;">Hardware Maintenance</div>
+                        <div style="font-size: 0.75rem; color: var(--warning); font-weight: 600; text-align: center; padding: 0.35rem 0;">Hardware Maintenance</div>
                     ` : `
                         <button class="btn btn-sm btn-primary" style="width: 100%;" onclick="window.quickCheckinPc('${comp.id}')">
                             <i data-lucide="play" style="width: 12px;"></i> Assign Student
@@ -273,22 +281,57 @@ document.querySelectorAll('.time-filter-btn').forEach(btn => {
 document.getElementById('search-logs-student')?.addEventListener('input', renderUsageLogs);
 filterLab?.addEventListener('change', renderWorkstations);
 
-// Add Machine Modal
-btnOpenAdd?.addEventListener('click', () => modalAdd.classList.add('active'));
+// Add / Edit Machine Handlers
+btnOpenAdd?.addEventListener('click', () => {
+    document.getElementById('modal-pc-title').innerText = 'Add Workstation Machine';
+    document.getElementById('add-pc-id').value = '';
+    formMachine.reset();
+    document.getElementById('add-pc-campus').value = erp.getActiveCampusId() !== 'ALL' ? erp.getActiveCampusId() : 'camp-main';
+    document.getElementById('add-pc-status').value = 'AVAILABLE';
+    modalAdd.classList.add('active');
+});
+
 modalAdd?.querySelectorAll('.close-pc-modal').forEach(b => b.addEventListener('click', () => modalAdd.classList.remove('active')));
+
+window.editWorkstation = function(id) {
+    const comp = erp.getComputers('ALL').find(c => c.id === id);
+    if (!comp) return;
+
+    document.getElementById('modal-pc-title').innerText = 'Edit Workstation Machine';
+    document.getElementById('add-pc-id').value = comp.id;
+    document.getElementById('add-pc-code').value = comp.machine_code;
+    document.getElementById('add-pc-lab').value = comp.lab_name;
+    document.getElementById('add-pc-ip').value = comp.ip_address || '';
+    document.getElementById('add-pc-campus').value = comp.campus_id || 'camp-main';
+    document.getElementById('add-pc-specs').value = comp.specs || '';
+    document.getElementById('add-pc-status').value = comp.status || 'AVAILABLE';
+
+    modalAdd.classList.add('active');
+};
+
+window.deleteWorkstation = function(id, machineCode) {
+    window.app.confirm(`Are you sure you want to remove workstation "${machineCode}"?`, "Delete Workstation", () => {
+        erp.deleteComputer(id);
+        window.app.toast(`Workstation "${machineCode}" deleted.`, "info", "Workstation Removed");
+        renderWorkstations();
+    });
+};
 
 formMachine?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const newComp = {
-        machine_code: document.getElementById('add-pc-code').value.trim(),
+    const pcId = document.getElementById('add-pc-id').value;
+    const compData = {
+        id: pcId || undefined,
+        machine_code: document.getElementById('add-pc-code').value.trim().toUpperCase(),
         lab_name: document.getElementById('add-pc-lab').value.trim(),
         ip_address: document.getElementById('add-pc-ip').value.trim(),
         campus_id: document.getElementById('add-pc-campus').value,
-        specs: document.getElementById('add-pc-specs').value.trim() || 'Standard Workstation'
+        specs: document.getElementById('add-pc-specs').value.trim() || 'Standard Workstation',
+        status: document.getElementById('add-pc-status').value
     };
 
-    erp.saveComputer(newComp);
-    window.app.toast(`Workstation ${newComp.machine_code} added.`, "success", "Machine Registered");
+    erp.saveComputer(compData);
+    window.app.toast(`Workstation ${compData.machine_code} ${pcId ? 'updated' : 'registered'} successfully.`, "success", pcId ? "Machine Updated" : "Machine Registered");
     modalAdd.classList.remove('active');
     formMachine.reset();
     renderWorkstations();

@@ -174,13 +174,25 @@ export class ErpDataService {
         const list = this.getCampuses();
         if (campus.id) {
             const index = list.findIndex(c => c.id === campus.id);
-            if (index !== -1) list[index] = campus;
+            if (index !== -1) list[index] = { ...list[index], ...campus };
         } else {
             campus.id = `camp-${Date.now()}`;
             list.push(campus);
         }
         localStorage.setItem(STORAGE_KEYS.CAMPUSES, JSON.stringify(list));
+        window.dispatchEvent(new CustomEvent('campusChanged', { detail: { campusId: campus.id } }));
         return campus;
+    }
+
+    deleteCampus(id) {
+        let list = this.getCampuses();
+        list = list.filter(c => c.id !== id);
+        localStorage.setItem(STORAGE_KEYS.CAMPUSES, JSON.stringify(list));
+        if (this.activeCampusId === id) {
+            this.setActiveCampusId(list[0]?.id || 'camp-main');
+        } else {
+            window.dispatchEvent(new CustomEvent('campusChanged', { detail: { campusId: this.activeCampusId } }));
+        }
     }
 
     // --- COMPUTERS & WORKSTATION TRACKING ---
@@ -193,7 +205,7 @@ export class ErpDataService {
         const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMPUTERS) || '[]');
         if (comp.id) {
             const idx = list.findIndex(c => c.id === comp.id);
-            if (idx !== -1) list[idx] = comp;
+            if (idx !== -1) list[idx] = { ...list[idx], ...comp };
         } else {
             comp.id = `comp-${Date.now()}`;
             comp.campus_id = comp.campus_id || this.activeCampusId;
@@ -310,9 +322,32 @@ export class ErpDataService {
         session.campus_id = session.campus_id || this.activeCampusId;
         session.date = session.date || new Date().toISOString().split('T')[0];
         session.status = session.status || 'ACTIVE';
+        session.present_count = session.present_count || 0;
         list.unshift(session);
         localStorage.setItem(STORAGE_KEYS.PERIOD_SESSIONS, JSON.stringify(list));
         return session;
+    }
+
+    updatePeriodSession(session) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.PERIOD_SESSIONS) || '[]');
+        const idx = list.findIndex(p => p.id === session.id);
+        if (idx !== -1) {
+            list[idx] = { ...list[idx], ...session };
+            localStorage.setItem(STORAGE_KEYS.PERIOD_SESSIONS, JSON.stringify(list));
+            return list[idx];
+        }
+        return session;
+    }
+
+    deletePeriodSession(id) {
+        let list = JSON.parse(localStorage.getItem(STORAGE_KEYS.PERIOD_SESSIONS) || '[]');
+        list = list.filter(p => p.id !== id);
+        localStorage.setItem(STORAGE_KEYS.PERIOD_SESSIONS, JSON.stringify(list));
+
+        // Clean up attendance records
+        let attList = JSON.parse(localStorage.getItem(STORAGE_KEYS.PERIOD_ATTENDANCE) || '[]');
+        attList = attList.filter(a => a.session_id !== id);
+        localStorage.setItem(STORAGE_KEYS.PERIOD_ATTENDANCE, JSON.stringify(attList));
     }
 
     getPeriodAttendance(sessionId) {
@@ -359,6 +394,29 @@ export class ErpDataService {
         return campusId === 'ALL' ? all : all.filter(h => h.campus_id === campusId);
     }
 
+    saveEventHall(hall) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENT_HALLS) || '[]');
+        if (hall.id) {
+            const idx = list.findIndex(h => h.id === hall.id);
+            if (idx !== -1) {
+                list[idx] = { ...list[idx], ...hall };
+            }
+        } else {
+            hall.id = `hall-${Date.now()}`;
+            hall.campus_id = hall.campus_id || this.activeCampusId;
+            hall.status = hall.status || 'AVAILABLE';
+            list.push(hall);
+        }
+        localStorage.setItem(STORAGE_KEYS.EVENT_HALLS, JSON.stringify(list));
+        return hall;
+    }
+
+    deleteEventHall(id) {
+        let list = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENT_HALLS) || '[]');
+        list = list.filter(h => h.id !== id);
+        localStorage.setItem(STORAGE_KEYS.EVENT_HALLS, JSON.stringify(list));
+    }
+
     getEvents(campusId = this.activeCampusId) {
         const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS) || '[]');
         return campusId === 'ALL' ? all : all.filter(e => e.campus_id === campusId);
@@ -372,6 +430,17 @@ export class ErpDataService {
         event.registered_count = 0;
         list.unshift(event);
         localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(list));
+        return event;
+    }
+
+    updateEvent(event) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.EVENTS) || '[]');
+        const idx = list.findIndex(e => e.id === event.id);
+        if (idx !== -1) {
+            list[idx] = { ...list[idx], ...event };
+            localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(list));
+            return list[idx];
+        }
         return event;
     }
 

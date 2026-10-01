@@ -56,7 +56,15 @@ function renderPeriodSessions() {
                         </div>
                         <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin: 0;">${p.period_name}</h3>
                     </div>
-                    <span class="badge ${p.status === 'ACTIVE' ? 'badge-success' : 'badge-brand'}" style="font-size: 0.65rem;">${p.status}</span>
+                    <div style="display: flex; align-items: center; gap: 0.35rem;">
+                        <span class="badge ${p.status === 'ACTIVE' ? 'badge-success' : 'badge-brand'}" style="font-size: 0.65rem;">${p.status}</span>
+                        <button class="btn btn-ghost btn-icon btn-sm" style="padding: 2px 4px; color: var(--text-muted);" title="Edit Period" onclick="event.stopPropagation(); window.editPeriod('${p.id}')">
+                            <i data-lucide="edit-3" style="width: 13px;"></i>
+                        </button>
+                        <button class="btn btn-ghost btn-icon btn-sm" style="padding: 2px 4px; color: var(--danger);" title="Delete Period" onclick="event.stopPropagation(); window.deletePeriod('${p.id}', '${p.period_name.replace(/'/g, "\\'")}')">
+                            <i data-lucide="trash-2" style="width: 13px;"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
@@ -221,29 +229,187 @@ document.getElementById('btn-camera-attendance')?.addEventListener('click', () =
     });
 });
 
-// Start Period Modal
-btnStartPeriod?.addEventListener('click', () => modalPeriod.classList.add('active'));
+// Period Modal & Actions
+btnStartPeriod?.addEventListener('click', () => {
+    document.getElementById('modal-period-title').innerText = 'Start Class Facility Period';
+    document.getElementById('period-id').value = '';
+    formPeriod.reset();
+    document.getElementById('period-status').value = 'ACTIVE';
+    modalPeriod.classList.add('active');
+});
+
 modalPeriod?.querySelectorAll('.close-period-modal').forEach(b => b.addEventListener('click', () => modalPeriod.classList.remove('active')));
+
+window.editPeriod = function(id) {
+    const period = erp.getPeriodSessions('ALL').find(p => p.id === id);
+    if (!period) return;
+
+    document.getElementById('modal-period-title').innerText = 'Edit Class Facility Period';
+    document.getElementById('period-id').value = period.id;
+    document.getElementById('period-facility').value = period.facility_type || 'LIBRARY';
+    document.getElementById('period-slot-name').value = period.period_name || '';
+    document.getElementById('period-dept').value = period.department_name || 'Computer Science';
+    document.getElementById('period-class').value = period.class_name || '';
+    document.getElementById('period-teacher').value = period.teacher_name || '';
+    document.getElementById('period-topic').value = period.topic || '';
+    document.getElementById('period-status').value = period.status || 'ACTIVE';
+
+    modalPeriod.classList.add('active');
+};
+
+window.deletePeriod = function(id, periodName) {
+    window.app.confirm(`Are you sure you want to delete period session "${periodName}"? Attendance logs for this period will also be removed.`, "Delete Period", () => {
+        erp.deletePeriodSession(id);
+        window.app.toast(`Period "${periodName}" deleted.`, "info", "Period Removed");
+        if (activePeriodId === id) activePeriodId = null;
+        renderPeriodSessions();
+        const remaining = erp.getPeriodSessions(erp.getActiveCampusId());
+        if (remaining.length > 0) {
+            window.selectPeriodSession(remaining[0].id);
+        } else {
+            periodTitle.innerText = 'Select a Period Session';
+            periodSubtitle.innerText = 'Click on any scheduled period on the left to take attendance';
+            rosterActions.style.display = 'none';
+            terminalRow.style.display = 'none';
+            rosterList.innerHTML = `<div style="padding: 3rem; text-align: center; color: var(--text-muted);"><i data-lucide="users" style="width: 36px; height: 36px; opacity: 0.4; margin-bottom: 0.5rem;"></i><div>No active period session. Click "Schedule / Start Period" to begin.</div></div>`;
+            if (window.lucide) lucide.createIcons();
+        }
+    });
+};
 
 formPeriod?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const newPeriod = {
+    const periodId = document.getElementById('period-id').value;
+    const periodData = {
+        id: periodId || undefined,
         facility_type: document.getElementById('period-facility').value,
         period_name: document.getElementById('period-slot-name').value.trim(),
         department_name: document.getElementById('period-dept').value,
         class_name: document.getElementById('period-class').value.trim(),
         teacher_name: document.getElementById('period-teacher').value.trim(),
         topic: document.getElementById('period-topic').value.trim() || 'Class Study',
-        total_students: 45,
-        present_count: 0
+        status: document.getElementById('period-status').value || 'ACTIVE',
+        total_students: 45
     };
 
-    const saved = erp.createPeriodSession(newPeriod);
-    window.app.toast(`Started period: ${saved.period_name} for ${saved.class_name}.`, "success", "Period Launched");
+    if (periodId) {
+        erp.updatePeriodSession(periodData);
+        window.app.toast(`Period "${periodData.period_name}" updated.`, "success", "Period Saved");
+    } else {
+        const saved = erp.createPeriodSession(periodData);
+        window.app.toast(`Started period: ${saved.period_name} for ${saved.class_name}.`, "success", "Period Launched");
+        activePeriodId = saved.id;
+    }
+
     modalPeriod.classList.remove('active');
     formPeriod.reset();
     renderPeriodSessions();
-    window.selectPeriodSession(saved.id);
+    if (activePeriodId) window.selectPeriodSession(activePeriodId);
+});
+
+// =============================================================================
+// ADMIN ATTENDANCE REPORT GENERATOR (PDF & CSV)
+// =============================================================================
+const modalReport = document.getElementById('modal-attendance-report');
+modalReport?.querySelectorAll('.close-report-modal').forEach(b => b.addEventListener('click', () => modalReport.classList.remove('active')));
+
+document.getElementById('btn-generate-pdf-report')?.addEventListener('click', () => {
+    if (!activePeriodId) return window.app.toast("Please select a period session to generate report.", "warning", "Select Period");
+    const period = erp.getPeriodSessions('ALL').find(p => p.id === activePeriodId);
+    if (!period) return;
+
+    const existingAttendance = erp.getPeriodAttendance(activePeriodId);
+    const attendanceMap = new Map();
+    existingAttendance.forEach(a => attendanceMap.set(a.student_id, a));
+
+    const totalStudents = currentClassStudents.length || period.total_students || 45;
+    const presentRecords = currentClassStudents.filter(s => {
+        const rec = attendanceMap.get(s.student_id);
+        return rec && (rec.status === 'PRESENT' || rec.status === 'LATE');
+    });
+    const presentCount = presentRecords.length;
+    const absentCount = Math.max(0, totalStudents - presentCount);
+    const percentRate = totalStudents > 0 ? ((presentCount / totalStudents) * 100).toFixed(1) : '0.0';
+
+    // Populate Report Header & Meta
+    document.getElementById('rep-doc-campus').innerText = getActiveCampusName();
+    document.getElementById('rep-doc-ref').innerText = `ATT-${period.id.replace('per-', '')}`;
+    document.getElementById('rep-doc-generated').innerText = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+    document.getElementById('rep-class-name').innerText = period.class_name;
+    document.getElementById('rep-period-slot').innerText = period.period_name;
+    document.getElementById('rep-facility-type').innerText = period.facility_type === 'LIBRARY' ? 'Central Library Reading Period' : 'Computer Practical Lab';
+    document.getElementById('rep-teacher-name').innerText = period.teacher_name;
+    document.getElementById('rep-topic-name').innerText = period.topic || 'Class Facility Study';
+    document.getElementById('rep-session-date').innerText = period.date || new Date().toISOString().split('T')[0];
+    document.getElementById('rep-sign-teacher').innerText = period.teacher_name;
+
+    // Populate Stats
+    document.getElementById('rep-stat-total').innerText = totalStudents;
+    document.getElementById('rep-stat-present').innerText = presentCount;
+    document.getElementById('rep-stat-absent').innerText = absentCount;
+    document.getElementById('rep-stat-rate').innerText = `${percentRate}%`;
+
+    // Populate Roll Table
+    const tbody = document.getElementById('rep-student-tbody');
+    tbody.innerHTML = currentClassStudents.map((st, idx) => {
+        const record = attendanceMap.get(st.student_id);
+        const status = record ? record.status : 'ABSENT';
+        const method = record ? (record.checkin_method || 'MANUAL') : '—';
+        const timeStr = record && record.checkin_time ? new Date(record.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+
+        let statusColor = '#dc2626';
+        let statusBg = '#fef2f2';
+        if (status === 'PRESENT') { statusColor = '#16a34a'; statusBg = '#f0fdf4'; }
+        if (status === 'LATE') { statusColor = '#d97706'; statusBg = '#fffbeb'; }
+
+        return `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 6px 8px; font-weight: 700; color: #64748b;">${idx + 1}</td>
+                <td style="padding: 6px 8px; font-family: monospace; font-weight: 700; color: #3b82f6;">${st.student_id}</td>
+                <td style="padding: 6px 8px; font-weight: 600; color: #0f172a;">${st.name}</td>
+                <td style="padding: 6px 8px;">
+                    <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 800; color: ${statusColor}; background: ${statusBg}; border: 1px solid ${statusColor}30;">
+                        ${status}
+                    </span>
+                </td>
+                <td style="padding: 6px 8px; font-size: 0.75rem; color: #64748b;">${method}</td>
+                <td style="padding: 6px 8px; font-size: 0.75rem; color: #64748b;">${timeStr}</td>
+            </tr>
+        `;
+    }).join('');
+
+    modalReport.classList.add('active');
+});
+
+document.getElementById('btn-print-pdf-report')?.addEventListener('click', () => {
+    window.print();
+});
+
+document.getElementById('btn-export-attendance-csv')?.addEventListener('click', () => {
+    if (!activePeriodId) return window.app.toast("Please select a period session first.", "warning", "Select Period");
+    const period = erp.getPeriodSessions('ALL').find(p => p.id === activePeriodId);
+    if (!period) return;
+
+    const existingAttendance = erp.getPeriodAttendance(activePeriodId);
+    const attendanceMap = new Map();
+    existingAttendance.forEach(a => attendanceMap.set(a.student_id, a));
+
+    const headers = ["Roll_No", "Student_ID", "Student_Name", "Class", "Period_Slot", "Facility", "Teacher", "Date", "Status", "Checkin_Method", "Checkin_Time"];
+    const rows = currentClassStudents.map((st, idx) => {
+        const rec = attendanceMap.get(st.student_id);
+        const status = rec ? rec.status : 'ABSENT';
+        const method = rec ? (rec.checkin_method || 'MANUAL') : 'NONE';
+        const timeStr = rec && rec.checkin_time ? rec.checkin_time : '';
+        return `"${idx + 1}","${st.student_id}","${st.name}","${period.class_name}","${period.period_name}","${period.facility_type}","${period.teacher_name}","${period.date || ''}","${status}","${method}","${timeStr}"`;
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `Attendance_Report_${period.class_name.replace(/\s+/g, '_')}_${period.period_name.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+    link.click();
+    window.app.toast("Attendance CSV exported successfully.", "success", "CSV Ready");
 });
 
 window.addEventListener('campusChanged', () => {

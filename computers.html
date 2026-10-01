@@ -235,11 +235,12 @@
     <div id="modal-add-computer" class="app-dialog-overlay">
         <div class="app-dialog" style="max-width: 580px; text-align: left;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-                <h2 style="font-size: 1.25rem; font-weight: 800; margin: 0;">Add Workstation Machine</h2>
+                <h2 id="modal-pc-title" style="font-size: 1.25rem; font-weight: 800; margin: 0;">Add Workstation Machine</h2>
                 <button class="btn btn-ghost btn-icon close-pc-modal"><i data-lucide="x" style="width: 18px;"></i></button>
             </div>
 
             <form id="form-save-machine">
+                <input type="hidden" id="add-pc-id" value="">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="input-group">
                         <label>Machine Code *</label>
@@ -266,9 +267,19 @@
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label>Hardware Specifications</label>
-                    <input type="text" id="add-pc-specs" placeholder="e.g. Intel i7, 32GB RAM, 1TB SSD, 4K Display">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="input-group">
+                        <label>Hardware Specifications</label>
+                        <input type="text" id="add-pc-specs" placeholder="e.g. Intel i7, 32GB RAM, 1TB SSD, 4K Display">
+                    </div>
+                    <div class="input-group">
+                        <label>Operational Status</label>
+                        <select id="add-pc-status">
+                            <option value="AVAILABLE">AVAILABLE</option>
+                            <option value="MAINTENANCE">MAINTENANCE</option>
+                            <option value="IN_USE">IN_USE</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">

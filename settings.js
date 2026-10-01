@@ -220,7 +220,7 @@ function loadCampuses() {
 
     const campuses = erp.getCampuses();
     if (campuses.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="padding: 2rem; text-align: center; color: var(--text-muted);">No campuses registered yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">No campuses registered yet.</td></tr>`;
         return;
     }
 
@@ -232,29 +232,75 @@ function loadCampuses() {
             <td style="font-weight: 600;">${c.head_name || 'Dean Office'}</td>
             <td style="font-size: 0.85rem; color: var(--text-muted);">${c.email || 'campus@tgi.edu'}</td>
             <td style="font-size: 0.85rem;">${c.phone || '+91 80 0000 0000'}</td>
+            <td>
+                <div style="display: flex; gap: 0.25rem;">
+                    <button class="btn btn-ghost btn-sm" style="padding: 0.2rem 0.4rem;" title="Edit Campus" onclick="window.editCampus('${c.id}')">
+                        <i data-lucide="edit-3" style="width: 14px;"></i>
+                    </button>
+                    <button class="btn btn-ghost btn-sm" style="color: var(--danger); padding: 0.2rem 0.4rem;" title="Delete Campus" onclick="window.deleteCampus('${c.id}', '${c.name.replace(/'/g, "\\'")}')">
+                        <i data-lucide="trash-2" style="width: 14px;"></i>
+                    </button>
+                </div>
+            </td>
         </tr>
     `).join('');
+
+    if (window.lucide) lucide.createIcons();
 }
 
+const modalCampus = document.getElementById('modal-campus');
+const formCampus = document.getElementById('form-campus');
+
 document.getElementById('btn-add-campus')?.addEventListener('click', () => {
-    const name = prompt('Enter Campus Full Name:');
-    if (!name) return;
-    const code = prompt('Enter Campus Code (e.g., MMC, TEC, NSC):', 'WEC');
-    if (!code) return;
-    const city = prompt('Enter Campus City / Region:', 'Bangalore');
-    const headName = prompt('Enter Dean / Campus Head Full Name:', 'Dr. Sarah Connor');
-    const email = prompt('Enter Official Contact Email:', `dean.${code.toLowerCase()}@tgi.edu`);
+    document.getElementById('modal-campus-title').innerText = 'Register Institutional Campus';
+    document.getElementById('camp-id').value = '';
+    formCampus.reset();
+    modalCampus.classList.add('active');
+});
 
-    erp.saveCampus({
-        name,
-        code: code.toUpperCase(),
-        city: city || 'Bangalore',
-        head_name: headName || 'Campus Dean',
-        email: email || 'dean@tgi.edu',
-        phone: '+91 80 2345 6789'
+modalCampus?.querySelectorAll('.close-campus-modal').forEach(b => b.addEventListener('click', () => modalCampus.classList.remove('active')));
+
+window.editCampus = function(id) {
+    const c = erp.getCampuses().find(item => item.id === id);
+    if (!c) return;
+
+    document.getElementById('modal-campus-title').innerText = 'Edit Institutional Campus';
+    document.getElementById('camp-id').value = c.id;
+    document.getElementById('camp-code').value = c.code || '';
+    document.getElementById('camp-city').value = c.city || '';
+    document.getElementById('camp-name').value = c.name || '';
+    document.getElementById('camp-head').value = c.head_name || '';
+    document.getElementById('camp-email').value = c.email || '';
+    document.getElementById('camp-phone').value = c.phone || '';
+
+    modalCampus.classList.add('active');
+};
+
+window.deleteCampus = function(id, name) {
+    window.app.confirm(`Are you sure you want to delete campus "${name}"?`, "Delete Campus", () => {
+        erp.deleteCampus(id);
+        window.app.toast(`Campus "${name}" deleted.`, "info", "Campus Removed");
+        loadCampuses();
     });
+};
 
-    window.app.toast(`Campus "${name}" registered successfully!`, 'success', 'Campus Added');
+formCampus?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const campId = document.getElementById('camp-id').value;
+    const campusData = {
+        id: campId || undefined,
+        code: document.getElementById('camp-code').value.trim().toUpperCase(),
+        name: document.getElementById('camp-name').value.trim(),
+        city: document.getElementById('camp-city').value.trim(),
+        head_name: document.getElementById('camp-head').value.trim(),
+        email: document.getElementById('camp-email').value.trim(),
+        phone: document.getElementById('camp-phone').value.trim()
+    };
+
+    erp.saveCampus(campusData);
+    window.app.toast(`Campus "${campusData.name}" ${campId ? 'updated' : 'registered'} successfully!`, 'success', campId ? 'Campus Updated' : 'Campus Added');
+    modalCampus.classList.remove('active');
+    formCampus.reset();
     loadCampuses();
 });
 

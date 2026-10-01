@@ -148,6 +148,7 @@
                                     <th>Dean / Campus Head</th>
                                     <th>Contact Email</th>
                                     <th>Phone</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="campuses-tbody">
@@ -273,6 +274,56 @@
                 <button class="btn btn-outline" style="flex: 1;" id="btn-cancel-recording">Cancel</button>
                 <button class="btn btn-primary" style="flex: 1;" id="btn-confirm-recording" disabled>Save Shortcut</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Campus Modal -->
+    <div id="modal-campus" class="app-dialog-overlay">
+        <div class="app-dialog" style="max-width: 520px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h3 id="modal-campus-title" style="font-size: 1.25rem; font-weight: 800; margin: 0;">Register Institutional Campus</h3>
+                <button class="btn btn-ghost btn-icon close-campus-modal"><i data-lucide="x" style="width: 18px;"></i></button>
+            </div>
+
+            <form id="form-campus">
+                <input type="hidden" id="camp-id" value="">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="input-group">
+                        <label>Campus Code *</label>
+                        <input type="text" id="camp-code" placeholder="e.g. TEC" required>
+                    </div>
+                    <div class="input-group">
+                        <label>City / Region *</label>
+                        <input type="text" id="camp-city" placeholder="e.g. Bangalore" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Campus Full Name *</label>
+                    <input type="text" id="camp-name" placeholder="e.g. Technology & Engineering Campus" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Dean / Campus Head *</label>
+                    <input type="text" id="camp-head" placeholder="e.g. Prof. Evelyn Reed" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="input-group">
+                        <label>Official Email</label>
+                        <input type="email" id="camp-email" placeholder="dean.tech@tgi.edu">
+                    </div>
+                    <div class="input-group">
+                        <label>Contact Phone</label>
+                        <input type="text" id="camp-phone" placeholder="+91 80 4123 8900">
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <button type="button" class="btn btn-outline close-campus-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="save" style="width: 16px;"></i> Save Campus</button>
+                </div>
+            </form>
         </div>
     </div>
 
