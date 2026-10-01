@@ -797,10 +797,17 @@ function initNotificationDrawer() {
         if (notifDrawer.classList.contains('active')) renderNotificationItems();
     });
 
-    window.addEventListener('notificationsUpdated', () => {
-        updateNotificationBadges();
-        if (notifDrawer.classList.contains('active')) renderNotificationItems();
-    });
+    // Background sync notifications from Supabase
+    if (typeof erp?.syncNotificationsFromSupabase === 'function') {
+        erp.syncNotificationsFromSupabase().then(() => {
+            updateNotificationBadges();
+            if (notifDrawer?.classList.contains('active')) renderNotificationItems();
+        }).catch(() => {});
+
+        setInterval(() => {
+            erp.syncNotificationsFromSupabase().catch(() => {});
+        }, 30000);
+    }
 
     updateNotificationBadges();
 }
@@ -1043,62 +1050,63 @@ window.addEventListener('institutionProfileUpdated', applyInstitutionBranding);
 
 window.openBroadcastNotificationModal = function() {
     let modal = document.getElementById('modal-broadcast-notification');
+    const campuses = erp.getCampuses();
+    const campusOptions = campuses.map(c => `<option value="${c.id}">${c.name} (${c.code || 'CAMPUS'})</option>`).join('');
+
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'modal-broadcast-notification';
         modal.className = 'app-dialog-overlay';
-        const campuses = erp.getCampuses();
-        const campusOptions = campuses.map(c => `<option value="${c.id}">${c.name} (${c.code})</option>`).join('');
 
         modal.innerHTML = `
-            <div class="app-dialog" style="max-width: 540px; text-align: left;">
+            <div class="app-dialog modal-responsive" style="max-width: 520px; width: 94vw; text-align: left;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(59,130,246,0.1); color: var(--brand-primary); display: flex; align-items: center; justify-content: center;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(59,130,246,0.12); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                             <i data-lucide="megaphone" style="width: 18px; height: 18px;"></i>
                         </div>
                         <div>
-                            <h3 style="font-size: 1.2rem; font-weight: 800; margin: 0;">Create Broadcast Alert</h3>
-                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0;">Push real-time alerts to library members & executive desks</p>
+                            <h3 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-primary);">Create Push Notification</h3>
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0;">Broadcast live alert across mobile app & web terminals</p>
                         </div>
                     </div>
-                    <button class="btn btn-ghost btn-icon" id="btn-close-broadcast-modal"><i data-lucide="x" style="width: 18px;"></i></button>
+                    <button class="btn btn-ghost btn-icon btn-close-modal" id="btn-close-broadcast-modal"><i data-lucide="x" style="width: 18px; height: 18px;"></i></button>
                 </div>
 
                 <form id="form-broadcast-alert">
                     <div class="input-group" style="margin-bottom: 0.85rem;">
-                        <label>Alert Title *</label>
-                        <input type="text" id="bc-title" placeholder="e.g. Scheduled Lab Maintenance & Exam Lock" required>
+                        <label style="font-weight: 600; font-size: 0.8rem; margin-bottom: 0.35rem; display: block;">Alert Title *</label>
+                        <input type="text" id="bc-title" placeholder="e.g. Scheduled Lab Maintenance / Book Return Notice" required style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); font-family: inherit; font-size: 0.9rem;">
                     </div>
 
                     <div class="input-group" style="margin-bottom: 0.85rem;">
-                        <label>Message Content *</label>
-                        <textarea id="bc-message" rows="3" placeholder="Enter detailed notification content to be displayed across member and staff terminals..." required style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
+                        <label style="font-weight: 600; font-size: 0.8rem; margin-bottom: 0.35rem; display: block;">Message Content *</label>
+                        <textarea id="bc-message" rows="3" placeholder="Enter detailed announcement message..." required style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+                    <div class="modal-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
                         <div class="input-group">
-                            <label>Notification Category</label>
-                            <select id="bc-type" style="padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); width: 100%;">
+                            <label style="font-weight: 600; font-size: 0.8rem; margin-bottom: 0.35rem; display: block;">Category</label>
+                            <select id="bc-type" style="padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); width: 100%; font-family: inherit;">
                                 <option value="BROADCAST">📢 General Broadcast</option>
                                 <option value="APPROVAL">🛡️ Executive Approval</option>
                                 <option value="OVERDUE">⚠️ Circulation Overdue</option>
                                 <option value="EVENT">🎟️ Event & Symposium</option>
-                                <option value="LAB_SESSION">💻 Lab & Workstation Alert</option>
+                                <option value="LAB_SESSION">💻 Lab & Workstation</option>
                             </select>
                         </div>
                         <div class="input-group">
-                            <label>Target Sub-Campus</label>
-                            <select id="bc-campus" style="padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); width: 100%;">
-                                <option value="ALL">🌐 All Multi-Campuses</option>
+                            <label style="font-weight: 600; font-size: 0.8rem; margin-bottom: 0.35rem; display: block;">Campus</label>
+                            <select id="bc-campus" style="padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); width: 100%; font-family: inherit;">
+                                <option value="ALL">🌐 All Campuses</option>
                                 ${campusOptions}
                             </select>
                         </div>
                     </div>
 
                     <div class="input-group" style="margin-bottom: 1.25rem;">
-                        <label>Target Audience</label>
-                        <select id="bc-audience" style="padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); width: 100%;">
+                        <label style="font-weight: 600; font-size: 0.8rem; margin-bottom: 0.35rem; display: block;">Target Audience</label>
+                        <select id="bc-audience" style="padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); width: 100%; font-family: inherit;">
                             <option value="ALL_MEMBERS">Everyone (Students, Faculty, Staff)</option>
                             <option value="STUDENTS">Students & Enrolled Patrons Only</option>
                             <option value="FACULTY">Faculty & Teaching Staff Only</option>
@@ -1106,50 +1114,82 @@ window.openBroadcastNotificationModal = function() {
                         </select>
                     </div>
 
-                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                        <button type="button" class="btn btn-outline" id="btn-cancel-broadcast">Cancel</button>
-                        <button type="submit" class="btn btn-primary" style="background: var(--brand-primary);"><i data-lucide="send" style="width: 15px;"></i> Send Push Notification</button>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline" id="btn-cancel-broadcast" style="flex: 1 1 auto; max-width: 140px;">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="btn-submit-broadcast" style="flex: 2 1 auto;"><i data-lucide="send" style="width: 15px;"></i> Send Push Notification</button>
                     </div>
                 </form>
             </div>
         `;
         document.body.appendChild(modal);
 
-        modal.querySelector('#btn-close-broadcast-modal')?.addEventListener('click', () => modal.style.display = 'none');
-        modal.querySelector('#btn-cancel-broadcast')?.addEventListener('click', () => modal.style.display = 'none');
+        const closeModal = () => {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        };
+
+        modal.querySelector('#btn-close-broadcast-modal')?.addEventListener('click', closeModal);
+        modal.querySelector('#btn-cancel-broadcast')?.addEventListener('click', closeModal);
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.style.display = 'none';
+            if (e.target === modal) closeModal();
         });
 
-        modal.querySelector('#form-broadcast-alert')?.addEventListener('submit', (e) => {
+        modal.querySelector('#form-broadcast-alert')?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const title = document.getElementById('bc-title').value.trim();
-            const message = document.getElementById('bc-message').value.trim();
-            const type = document.getElementById('bc-type').value;
-            const campusId = document.getElementById('bc-campus').value;
+            const title = document.getElementById('bc-title')?.value.trim();
+            const message = document.getElementById('bc-message')?.value.trim();
+            const type = document.getElementById('bc-type')?.value || 'BROADCAST';
+            const campusId = document.getElementById('bc-campus')?.value || 'ALL';
+            const audience = document.getElementById('bc-audience')?.value || 'ALL_MEMBERS';
 
-            erp.createNotification({
-                title,
-                message,
-                type,
-                campus_id: campusId,
-                timestamp: new Date().toISOString()
-            });
-
-            if (window.AndroidBridge && typeof window.AndroidBridge.postNativeNotification === 'function') {
-                window.AndroidBridge.postNativeNotification(title, message, type, '');
+            if (!title || !message) {
+                window.app.toast("Please enter both title and message content", "warning");
+                return;
             }
 
-            playSynthSound('success');
-            window.app.toast(`Broadcast notification "${title}" sent!`, 'success', 'Broadcast Live');
-            modal.style.display = 'none';
-            document.getElementById('form-broadcast-alert').reset();
-            renderNotificationItems();
-            updateNotificationBadges();
+            const submitBtn = modal.querySelector('#btn-submit-broadcast');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Dispatching...';
+            }
+
+            try {
+                await erp.createNotification({
+                    title,
+                    message,
+                    type,
+                    campus_id: campusId,
+                    target_audience: audience,
+                    timestamp: new Date().toISOString()
+                });
+
+                playSynthSound('success');
+                window.app.toast(`Broadcast notification "${title}" dispatched!`, 'success', 'Broadcast Live');
+                closeModal();
+                document.getElementById('form-broadcast-alert')?.reset();
+                renderNotificationItems();
+                updateNotificationBadges();
+            } catch (err) {
+                console.error("Failed to broadcast notification:", err);
+                window.app.toast("Failed to dispatch alert: " + (err.message || 'Unknown error'), "error");
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<i data-lucide="send" style="width: 15px;"></i> Send Push Notification`;
+                    if (window.lucide) lucide.createIcons();
+                }
+            }
         });
+    } else {
+        // Refresh campus options
+        const campusSelect = modal.querySelector('#bc-campus');
+        if (campusSelect) {
+            campusSelect.innerHTML = `<option value="ALL">🌐 All Campuses</option>${campusOptions}`;
+        }
     }
 
     modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('active'), 10);
     if (window.lucide) lucide.createIcons();
 };
 

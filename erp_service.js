@@ -628,6 +628,16 @@ export class ErpDataService {
         request.created_at = new Date().toISOString();
         list.unshift(request);
         localStorage.setItem(STORAGE_KEYS.FACILITY_REQUESTS, JSON.stringify(list));
+
+        // Trigger notification
+        this.createNotification({
+            title: `New Facility Request: ${request.facility_type || 'Facility'}`,
+            message: `${request.requester_name || 'Staff'} submitted a request for ${request.facility_type || 'Facility'} on ${request.target_date || 'scheduled date'}.`,
+            type: 'APPROVAL',
+            campus_id: request.campus_id,
+            target_role: 'ADMIN'
+        }).catch?.(() => {});
+
         return request;
     }
 
@@ -640,6 +650,15 @@ export class ErpDataService {
             req.remarks = remarks;
             req.resolved_at = new Date().toISOString();
             localStorage.setItem(STORAGE_KEYS.FACILITY_REQUESTS, JSON.stringify(list));
+
+            // Trigger notification
+            this.createNotification({
+                title: `Facility Request ${status === 'APPROVED' ? 'Approved' : 'Status Updated'}`,
+                message: `Request for ${req.facility_type || 'Facility'} by ${req.requester_name || 'requester'} was ${status.toLowerCase()} by ${approverName}.`,
+                type: 'APPROVAL',
+                campus_id: req.campus_id,
+                target_role: 'ALL'
+            }).catch?.(() => {});
         }
         return req;
     }
@@ -758,25 +777,96 @@ export class ErpDataService {
     // --- NOTIFICATIONS SYSTEM ---
     getNotifications(campusId = this.activeCampusId) {
         const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
-        return campusId === 'ALL' ? all : all.filter(n => n.campus_id === campusId || n.campus_id === 'ALL');
+        return campusId === 'ALL' ? all : all.filter(n => !n.campus_id || n.campus_id === campusId || n.campus_id === 'ALL');
     }
 
     getUnreadNotificationCount() {
         return this.getNotifications().filter(n => n.unread).length;
     }
 
-    createNotification(notif) {
+    async syncNotificationsFromSupabase() {
+        try {
+            const { data, error } = await supabase
+                .from('notifications')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+            
+            if (data && !error) {
+                const local = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
+                const map = new Map();
+                local.forEach(item => map.set(item.id, item));
+                data.forEach(remote => {
+                    const existing = map.get(remote.id);
+                    map.set(remote.id, {
+                        id: remote.id,
+                        title: remote.title || 'Notification',
+                        message: remote.message || '',
+                        type: remote.type || 'BROADCAST',
+                        link: remote.link || remote.action_link || '',
+                        campus_id: remote.campus_id || 'ALL',
+                        target_role: remote.target_role || remote.target_audience || 'ALL',
+                        timestamp: remote.created_at || new Date().toISOString(),
+                        unread: existing ? existing.unread : (remote.unread !== undefined ? remote.unread : !remote.is_read)
+                    });
+                });
+                const merged = Array.from(map.values()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(merged));
+                window.dispatchEvent(new CustomEvent('notificationsUpdated'));
+                return merged;
+            }
+        } catch (e) {
+            console.warn("Could not sync notifications from Supabase:", e);
+        }
+        return this.getNotifications();
+    }
+
+    async createNotification(notif) {
         const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
-        notif.id = `notif-${Date.now()}`;
+        notif.id = notif.id || `notif-${Date.now()}-${Math.floor(Math.random()*1000)}`;
         notif.timestamp = notif.timestamp || new Date().toISOString();
-        notif.unread = true;
+        notif.unread = notif.unread !== undefined ? notif.unread : true;
+        notif.campus_id = notif.campus_id || this.activeCampusId || 'ALL';
+        notif.type = notif.type || 'BROADCAST';
+        
         list.unshift(notif);
         localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
         window.dispatchEvent(new CustomEvent('notificationReceived', { detail: notif }));
+        window.dispatchEvent(new CustomEvent('notificationsUpdated'));
+
+        // Native Android Bridge notification
+        if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.postNativeNotification === 'function') {
+            try {
+                window.AndroidBridge.postNativeNotification(notif.title || 'Notification', notif.message || '', notif.type || 'BROADCAST', notif.link || '');
+            } catch (e) {
+                console.warn("AndroidBridge notification error:", e);
+            }
+        }
+
+        // Supabase remote persistence
+        try {
+            await supabase.from('notifications').insert([{
+                id: notif.id,
+                campus_id: notif.campus_id,
+                title: notif.title,
+                message: notif.message,
+                type: notif.type,
+                link: notif.link || null,
+                action_link: notif.link || null,
+                target_audience: notif.target_audience || 'ALL',
+                target_role: notif.target_role || 'ALL',
+                unread: notif.unread,
+                is_read: !notif.unread,
+                created_at: notif.timestamp
+            }]);
+        } catch (e) {
+            console.warn("Supabase notification insert error:", e);
+        }
+
         return notif;
     }
 
-    markNotificationRead(id) {
+    async markNotificationRead(id) {
         const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
         const target = list.find(n => n.id === id);
         if (target) {
@@ -784,20 +874,29 @@ export class ErpDataService {
             localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
             window.dispatchEvent(new CustomEvent('notificationsUpdated'));
         }
+        try {
+            await supabase.from('notifications').update({ unread: false, is_read: true }).eq('id', id);
+        } catch (e) {}
     }
 
-    markAllNotificationsRead() {
+    async markAllNotificationsRead() {
         const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
         list.forEach(n => n.unread = false);
         localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
         window.dispatchEvent(new CustomEvent('notificationsUpdated'));
+        try {
+            await supabase.from('notifications').update({ unread: false, is_read: true }).neq('id', 'dummy');
+        } catch (e) {}
     }
 
-    deleteNotification(id) {
+    async deleteNotification(id) {
         let list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS) || '[]');
         list = list.filter(n => n.id !== id);
         localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
         window.dispatchEvent(new CustomEvent('notificationsUpdated'));
+        try {
+            await supabase.from('notifications').delete().eq('id', id);
+        } catch (e) {}
     }
 
     // --- PREMIUM ADMIN MESSENGER & HELPDESK ---
