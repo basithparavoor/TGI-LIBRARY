@@ -846,6 +846,8 @@ function formatTimeAgo(dateStr) {
     if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
     if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
 export function applyInstitutionBranding() {
     const profile = erp.getInstitutionProfile();
     if (!profile) return;

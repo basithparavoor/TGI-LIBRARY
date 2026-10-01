@@ -167,6 +167,8 @@ export class ErpDataService {
         } else {
             window.dispatchEvent(new CustomEvent('campusChanged', { detail: { campusId: this.activeCampusId } }));
         }
+    }
+
     // --- INSTITUTION PROFILE & BRANDING ---
     getInstitutionProfile() {
         const defaultProfile = {
