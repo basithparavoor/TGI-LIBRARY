@@ -620,6 +620,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // User Profile Menu Popover Toggle
                 const userProfileBtn = document.getElementById('topbar-user-profile-btn');
                 const userProfilePopover = document.getElementById('popover-user-profile');
+                
+                // Populate current logged in admin user info
+                const currentUserName = localStorage.getItem('user_name') || 'Administrator';
+                const currentUserRole = localStorage.getItem('user_role') || 'SUPER ADMIN';
+                const avatarLetter = (currentUserName || 'A').trim().charAt(0).toUpperCase();
+
+                const userNameEl = document.getElementById('topbar-user-name');
+                if (userNameEl) userNameEl.innerText = currentUserName;
+
+                const userAvatarEl = document.getElementById('topbar-user-avatar');
+                if (userAvatarEl) userAvatarEl.innerText = avatarLetter;
+
+                if (userProfilePopover) {
+                    const popoverAvatar = userProfilePopover.querySelector('div > div:first-child');
+                    if (popoverAvatar) popoverAvatar.innerText = avatarLetter;
+                    const popoverLabels = userProfilePopover.querySelectorAll('div[style*="flex: 1"] div');
+                    if (popoverLabels.length >= 2) {
+                        popoverLabels[0].innerText = currentUserName;
+                        popoverLabels[1].innerText = currentUserRole;
+                    }
+                }
+
                 userProfileBtn?.addEventListener('click', (e) => {
                     e.stopPropagation();
                     closeAllTopbarPopovers(userProfilePopover);
@@ -663,7 +685,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Logout
                 document.getElementById('logout-btn')?.addEventListener('click', async () => {
                     window.app.confirm("Are you sure you want to sign out?", "Sign Out", async () => {
-                        await supabase.auth.signOut();
+                        localStorage.removeItem('custom_admin_session');
+                        localStorage.removeItem('user_id');
+                        localStorage.removeItem('user_name');
+                        localStorage.removeItem('user_role');
+                        localStorage.removeItem('user_email');
+                        try { await supabase.auth.signOut(); } catch (e) {}
                         window.location.href = 'login.html';
                     });
                 });

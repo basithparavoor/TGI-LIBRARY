@@ -663,7 +663,7 @@ CREATE TABLE IF NOT EXISTS id_card_templates (
 );
 
 -- =============================================================================
--- 15. ROLE-BASED ACCESS CONTROL (RBAC) MATRIX
+-- 15. ROLE-BASED ACCESS CONTROL (RBAC) & PRIVILEGED ADMIN ACCOUNTS
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS permissions (
@@ -691,6 +691,70 @@ VALUES
     ('EVENT_CONDUCTOR', FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE),
     ('STUDENT', FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE)
 ON CONFLICT (role) DO UPDATE SET can_view_all_campuses = EXCLUDED.can_view_all_campuses;
+
+-- Privileged Admin Accounts Delegated Under Super Admin
+CREATE TABLE IF NOT EXISTS admin_accounts (
+    id TEXT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'SYSTEM_ADMIN',
+    campus_id VARCHAR(100) DEFAULT 'ALL',
+    designation VARCHAR(150) DEFAULT 'System Administrator',
+    status VARCHAR(50) DEFAULT 'ACTIVE',
+    password_hash TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE admin_accounts ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'SYSTEM_ADMIN';
+ALTER TABLE admin_accounts ADD COLUMN IF NOT EXISTS campus_id VARCHAR(100) DEFAULT 'ALL';
+ALTER TABLE admin_accounts ADD COLUMN IF NOT EXISTS designation VARCHAR(150) DEFAULT 'System Administrator';
+ALTER TABLE admin_accounts ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'ACTIVE';
+ALTER TABLE admin_accounts ADD COLUMN IF NOT EXISTS password_hash TEXT;
+
+INSERT INTO admin_accounts (id, name, email, role, campus_id, designation, status, password_hash)
+VALUES ('admin-root', 'Super Administrator', 'admin@tgi.edu', 'SUPER_ADMIN', 'ALL', 'Chief System Director & Superadmin', 'ACTIVE', 'admin')
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    email = EXCLUDED.email,
+    role = EXCLUDED.role;
+
+-- 2. User Profile Directory for Auth Mapping (Supports both Supabase Auth UUIDs & Custom Admin IDs)
+CREATE TABLE IF NOT EXISTS profiles (
+    id TEXT PRIMARY KEY,
+    email VARCHAR(255),
+    name VARCHAR(255),
+    role VARCHAR(50) DEFAULT 'SUPER ADMIN',
+    campus_id VARCHAR(100) DEFAULT 'ALL',
+    is_superadmin BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Safely convert profiles.id to TEXT if it was previously created as UUID
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'id' AND data_type = 'uuid'
+    ) THEN
+        ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
+        ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_pkey CASCADE;
+        ALTER TABLE profiles ALTER COLUMN id TYPE TEXT USING id::text;
+        ALTER TABLE profiles ADD PRIMARY KEY (id);
+    END IF;
+END $$;
+
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS name VARCHAR(255);
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'SUPER ADMIN';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS campus_id VARCHAR(100) DEFAULT 'ALL';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_superadmin BOOLEAN DEFAULT TRUE;
+
+INSERT INTO profiles (id, email, name, role, campus_id, is_superadmin)
+VALUES ('admin-root', 'admin@tgi.edu', 'Super Administrator', 'SUPER ADMIN', 'ALL', TRUE)
+ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    name = EXCLUDED.name,
+    role = EXCLUDED.role;
 
 -- =============================================================================
 -- 16. ROW LEVEL SECURITY (RLS) POLICIES
@@ -735,6 +799,8 @@ ALTER TABLE hardware_devices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE nfc_tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE id_card_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 -- Grant Full Open Access for Web Client Operations
 DO $$ 
@@ -751,7 +817,8 @@ BEGIN
             'facility_requests', 'notifications', 'chat_channels', 'chat_messages', 
             'hall_passes', 'reading_logs', 'classroom_sets', 'campus_transfers', 
             'damage_incidents', 'audio_books', 'tts_reading_sessions', 'user_shortcuts', 
-            'hardware_devices', 'nfc_tags', 'id_card_templates', 'permissions'
+            'hardware_devices', 'nfc_tags', 'id_card_templates', 'permissions',
+            'admin_accounts', 'profiles'
         )
     LOOP
         EXECUTE format('DROP POLICY IF EXISTS "Public Full Access" ON %I;', tbl);
@@ -760,7 +827,7 @@ BEGIN
 END $$;
 
 -- =============================================================================
--- 17. PERFORMANCE OPTIMIZATION INDEXES
+-- 17. PERFORMANCE OPTIMIZATION INDEXES & REALTIME
 -- =============================================================================
 
 CREATE INDEX IF NOT EXISTS idx_books_isbn ON books(isbn);
@@ -775,3 +842,24 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_channel ON chat_messages(channel_id
 CREATE INDEX IF NOT EXISTS idx_user_shortcuts_user ON user_shortcuts(user_id);
 CREATE INDEX IF NOT EXISTS idx_nfc_tags_uid ON nfc_tags(tag_uid);
 CREATE INDEX IF NOT EXISTS idx_nfc_tags_barcode ON nfc_tags(barcode);
+CREATE INDEX IF NOT EXISTS idx_admin_accounts_email ON admin_accounts(email);
+CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
+
+-- Enable Realtime Publication for key reactive tables
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE admin_accounts;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE chat_messages;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;

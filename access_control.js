@@ -204,12 +204,18 @@ function setupAdminModalListeners() {
         e.preventDefault();
         const name = document.getElementById('new-admin-name').value.trim();
         const email = document.getElementById('new-admin-email').value.trim();
+        const password = document.getElementById('new-admin-password')?.value || '';
         const role = document.getElementById('new-admin-role').value;
         const designation = document.getElementById('new-admin-designation').value.trim();
         const campusId = document.getElementById('new-admin-campus').value;
 
         if (!name || !email) {
             window.app.toast("Please complete all required admin fields", "warning");
+            return;
+        }
+
+        if (password && password.length < 6) {
+            window.app.toast("Admin password must be at least 6 characters", "warning");
             return;
         }
 
@@ -223,6 +229,7 @@ function setupAdminModalListeners() {
             await erp.createAdminAccount({
                 name,
                 email,
+                password,
                 role,
                 designation,
                 campus_id: campusId,

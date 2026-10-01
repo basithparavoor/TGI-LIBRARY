@@ -744,7 +744,11 @@ export class ErpDataService {
             localStorage.setItem(STORAGE_KEYS.ADMIN_ACCOUNTS, JSON.stringify(defaultAdmins));
             return defaultAdmins;
         }
-        return JSON.parse(stored);
+        try {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch (e) {}
+        return defaultAdmins;
     }
 
     async createAdminAccount(admin) {
@@ -755,6 +759,7 @@ export class ErpDataService {
         admin.can_access_all = true;
         admin.role = admin.role || 'SYSTEM_ADMIN';
         admin.campus_id = admin.campus_id || 'ALL';
+        admin.password = admin.password || 'admin123';
 
         // Check if email already exists
         const existingIdx = list.findIndex(a => a.email.toLowerCase() === admin.email.toLowerCase());
@@ -779,9 +784,28 @@ export class ErpDataService {
             status: 'ACTIVE'
         });
 
-        // Remote Supabase persistence
+        // 1. Try to register user in Supabase Auth if possible
         try {
-            await supabase.from('admin_accounts').upsert([{
+            if (admin.password) {
+                await supabase.auth.signUp({
+                    email: admin.email,
+                    password: admin.password,
+                    options: {
+                        data: {
+                            name: admin.name,
+                            role: admin.role,
+                            campus_id: admin.campus_id
+                        }
+                    }
+                });
+            }
+        } catch (authErr) {
+            console.warn("Supabase auth signup attempt notice:", authErr?.message || authErr);
+        }
+
+        // 2. Remote Supabase persistence in admin_accounts table
+        try {
+            const { error: adminErr } = await supabase.from('admin_accounts').upsert([{
                 id: admin.id,
                 name: admin.name,
                 email: admin.email,
@@ -789,10 +813,29 @@ export class ErpDataService {
                 campus_id: admin.campus_id,
                 designation: admin.designation || 'System Administrator',
                 status: admin.status,
+                password_hash: admin.password,
                 created_at: admin.created_at
             }], { onConflict: 'id' });
+
+            if (adminErr) {
+                console.warn("Supabase admin_accounts upsert info:", adminErr.message);
+            }
         } catch (e) {
             console.warn("Supabase admin account sync warning:", e);
+        }
+
+        // 3. Remote Supabase persistence in profiles table (if present)
+        try {
+            await supabase.from('profiles').upsert([{
+                id: admin.id,
+                name: admin.name,
+                email: admin.email,
+                role: admin.role,
+                campus_id: admin.campus_id,
+                is_superadmin: admin.role === 'SUPER_ADMIN' || admin.role === 'SYSTEM_ADMIN'
+            }], { onConflict: 'id' });
+        } catch (profErr) {
+            // Non-blocking
         }
 
         return admin;
@@ -811,6 +854,10 @@ export class ErpDataService {
         try {
             await supabase.from('admin_accounts').delete().eq('id', id);
         } catch (e) {}
+
+        try {
+            await supabase.from('profiles').delete().eq('id', id);
+        } catch (e) {}
     }
 
     async syncAdminAccountsFromSupabase() {
@@ -823,13 +870,16 @@ export class ErpDataService {
                 const map = new Map();
                 list.forEach(a => map.set(a.id, a));
                 data.forEach(remote => {
+                    const existing = map.get(remote.id) || {};
                     map.set(remote.id, {
+                        ...existing,
                         id: remote.id,
                         name: remote.name,
                         email: remote.email,
+                        password: remote.password_hash || existing.password || 'admin123',
                         role: remote.role || 'SYSTEM_ADMIN',
                         campus_id: remote.campus_id || 'ALL',
-                        designation: remote.designation,
+                        designation: remote.designation || 'System Administrator',
                         status: remote.status || 'ACTIVE',
                         can_access_all: true,
                         created_at: remote.created_at || new Date().toISOString()
