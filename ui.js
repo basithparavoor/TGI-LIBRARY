@@ -70,23 +70,18 @@ function updateThemeIcon(theme) {
 
 // --- LIVE CLOCK & ACADEMIC SCHEDULE ---
 function getAcademicPeriodStatus() {
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    const totalMin = hours * 60 + minutes;
-
-    if (totalMin < 8 * 60 + 30) return "Morning Prep • Library Open";
-    if (totalMin < 9 * 60 + 15) return "Period 1 • 08:30 - 09:15";
-    if (totalMin < 10 * 60) return "Period 2 • 09:15 - 10:00";
-    if (totalMin < 10 * 60 + 15) return "Morning Recess • Break";
-    if (totalMin < 11 * 60) return "Period 3 • 10:15 - 11:00";
-    if (totalMin < 11 * 60 + 45) return "Period 4 • 11:00 - 11:45";
-    if (totalMin < 12 * 60 + 30) return "Midday Lunch Recess";
-    if (totalMin < 13 * 60 + 15) return "Period 5 • 12:30 - 01:15";
-    if (totalMin < 14 * 60) return "Period 6 • 01:15 - 02:00";
-    if (totalMin < 14 * 60 + 45) return "Period 7 • 02:00 - 02:45";
-    if (totalMin < 15 * 60 + 30) return "Period 8 • 02:45 - 03:30";
-    return "After-Hours • Open Research Lab";
+    try {
+        if (window.erp && typeof erp.getPeriodSessions === 'function') {
+            const sessions = erp.getPeriodSessions();
+            const todayStr = new Date().toISOString().split('T')[0];
+            const activeSessions = sessions.filter(s => s.status === 'ACTIVE' && (!s.date || s.date === todayStr));
+            if (activeSessions.length > 0) {
+                const current = activeSessions[0];
+                return `${current.period_name || 'Active Period'} • ${current.class_name || 'Session'}`;
+            }
+        }
+    } catch (e) {}
+    return "No Active Period";
 }
 
 function closeAllTopbarPopovers(exceptElement = null) {
@@ -877,9 +872,15 @@ export function applyInstitutionBranding() {
         if (brandTagline && profile.tagline) brandTagline.innerText = profile.tagline;
         if (brandIcon) {
             if (profile.logo_url) {
-                brandIcon.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+                brandIcon.style.background = 'transparent';
+                brandIcon.style.boxShadow = 'none';
+                brandIcon.style.border = 'none';
+                brandIcon.style.padding = '0';
+                brandIcon.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; background: transparent; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));">`;
             } else {
-                brandIcon.innerHTML = `<i data-lucide="building-2" style="width: 20px; height: 20px;"></i>`;
+                brandIcon.style.background = 'transparent';
+                brandIcon.style.boxShadow = 'none';
+                brandIcon.innerHTML = `<i data-lucide="building-2" style="width: 24px; height: 24px; color: var(--brand-primary);"></i>`;
                 if (window.lucide) lucide.createIcons();
             }
         }

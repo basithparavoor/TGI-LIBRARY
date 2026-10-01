@@ -10,7 +10,7 @@
         <!-- Campus Switcher Selector -->
         <div class="topbar-campus-chip" title="Switch Active Sub-Campus">
             <i data-lucide="building-2" style="width: 13px; height: 13px; color: var(--brand-primary); flex-shrink: 0;"></i>
-            <select id="topbar-campus-select" style="background: transparent; border: none; font-size: 0.76rem; font-weight: 700; color: var(--text-primary); outline: none; cursor: pointer; max-width: 160px;">
+            <select id="topbar-campus-select" style="background: transparent; border: none; font-size: 0.76rem; font-weight: 700; color: var(--text-primary); outline: none; cursor: pointer; max-width: 210px; width: auto;">
                 <option value="camp-main">Main Metropolitan Campus</option>
                 <option value="camp-tech">Tech & Engineering Campus</option>
                 <option value="camp-north">North Sub-Campus</option>
@@ -45,10 +45,16 @@
             </button>
 
             <!-- Quick Action Popover -->
-            <div class="topbar-popover" id="popover-quick-actions" style="width: 250px;">
+            <div class="topbar-popover" id="popover-quick-actions" style="width: 260px;">
                 <div style="padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border-color); font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">
                     ⚡ Instant ERP Actions
                 </div>
+                <a href="javascript:void(0)" onclick="window.openBroadcastNotificationModal()" class="popover-item" style="color: var(--brand-primary); font-weight: 700;">
+                    <i data-lucide="megaphone" style="width: 15px; color: var(--brand-primary);"></i> Broadcast Notification
+                </a>
+                <a href="nfc_id_cards.html" class="popover-item" style="color: #6366f1; font-weight: 700;">
+                    <i data-lucide="contact-2" style="width: 15px; color: #6366f1;"></i> NFC & ID Card Studio
+                </a>
                 <a href="circulation.html?action=issue" class="popover-item">
                     <i data-lucide="book-up" style="width: 15px; color: var(--brand-primary);"></i> Issue Book to Member
                 </a>
@@ -74,7 +80,7 @@
                     <i data-lucide="network" style="width: 15px; color: var(--brand-primary);"></i> Manage Academic Structure
                 </a>
                 <a href="library_storage.html" class="popover-item">
-                    <i data-lucide="archive" style="width: 15px; color: var(--brand-accent);"></i> Manage Library Storage
+                    <i data-lucide="layers" style="width: 15px; color: #8b5cf6;"></i> Manage Library Storage
                 </a>
             </div>
         </div>

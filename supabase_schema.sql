@@ -37,6 +37,29 @@ ON CONFLICT (setting_key) DO UPDATE SET
 -- 2. INSTITUTIONAL MULTI-CAMPUS HIERARCHY & MASTER DATA
 -- =============================================================================
 
+-- Institution Global Profile & Branding
+CREATE TABLE IF NOT EXISTS institution_profile (
+    id VARCHAR(50) PRIMARY KEY DEFAULT 'primary_institution',
+    name VARCHAR(255) NOT NULL DEFAULT 'TGI INSTITUTION',
+    tagline VARCHAR(255) DEFAULT 'ERP & Facility Suite',
+    reg_code VARCHAR(100) DEFAULT 'TGI-UNIV-2026',
+    established_year VARCHAR(50) DEFAULT '1998',
+    email VARCHAR(255) DEFAULT 'admin@tgi.edu',
+    phone VARCHAR(50) DEFAULT '+91 80 2345 6789',
+    website VARCHAR(255) DEFAULT 'https://tgi.edu',
+    address TEXT DEFAULT 'Bangalore, Karnataka, India',
+    logo_url TEXT,
+    favicon_url TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE institution_profile ADD COLUMN IF NOT EXISTS logo_url TEXT;
+ALTER TABLE institution_profile ADD COLUMN IF NOT EXISTS favicon_url TEXT;
+
+INSERT INTO institution_profile (id, name, tagline, reg_code, established_year, email, phone, website, address)
+VALUES ('primary_institution', 'TGI INSTITUTION', 'ERP & Facility Suite', 'TGI-UNIV-2026', '1998', 'admin@tgi.edu', '+91 80 2345 6789', 'https://tgi.edu', 'Bangalore, Karnataka, India')
+ON CONFLICT (id) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS campuses (
     id TEXT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -45,8 +68,21 @@ CREATE TABLE IF NOT EXISTS campuses (
     head_name VARCHAR(255),
     email VARCHAR(255),
     phone VARCHAR(50),
+    logo_url TEXT,
+    wings_count INTEGER DEFAULT 1,
+    capacity INTEGER DEFAULT 500,
+    established_year VARCHAR(50),
+    address TEXT,
+    status VARCHAR(50) DEFAULT 'ACTIVE',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE campuses ADD COLUMN IF NOT EXISTS logo_url TEXT;
+ALTER TABLE campuses ADD COLUMN IF NOT EXISTS wings_count INTEGER DEFAULT 1;
+ALTER TABLE campuses ADD COLUMN IF NOT EXISTS capacity INTEGER DEFAULT 500;
+ALTER TABLE campuses ADD COLUMN IF NOT EXISTS established_year VARCHAR(50);
+ALTER TABLE campuses ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE campuses ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'ACTIVE';
 
 INSERT INTO campuses (id, name, code, city, head_name, email, phone)
 VALUES 
@@ -58,33 +94,101 @@ ON CONFLICT (id) DO UPDATE SET
     head_name = EXCLUDED.head_name,
     email = EXCLUDED.email;
 
--- Academic Departments & Classes
+-- Academic Departments, Degree Programs & Class Sections
 CREATE TABLE IF NOT EXISTS departments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    code VARCHAR(50),
     name VARCHAR(255) UNIQUE NOT NULL,
+    hod_name VARCHAR(255),
+    email VARCHAR(255),
+    intake_capacity INTEGER DEFAULT 120,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE departments ADD COLUMN IF NOT EXISTS code VARCHAR(50);
+ALTER TABLE departments ADD COLUMN IF NOT EXISTS hod_name VARCHAR(255);
+ALTER TABLE departments ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+ALTER TABLE departments ADD COLUMN IF NOT EXISTS intake_capacity INTEGER DEFAULT 120;
+
+CREATE TABLE IF NOT EXISTS degree_programs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    department_id UUID REFERENCES departments(id) ON DELETE CASCADE,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    degree_level VARCHAR(100) DEFAULT 'Undergraduate (UG)',
+    duration_years INTEGER DEFAULT 4,
+    credits INTEGER DEFAULT 160,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS classes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     department_id UUID REFERENCES departments(id) ON DELETE CASCADE,
+    code VARCHAR(50),
     name VARCHAR(100) NOT NULL,
+    semester VARCHAR(100) DEFAULT 'Semester 1',
+    mentor_name VARCHAR(255),
+    room_no VARCHAR(100),
+    capacity INTEGER DEFAULT 60,
+    enrolled_count INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Library Storage Shelves & Racks
-CREATE TABLE IF NOT EXISTS shelves (
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS code VARCHAR(50);
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS semester VARCHAR(100) DEFAULT 'Semester 1';
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS mentor_name VARCHAR(255);
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS room_no VARCHAR(100);
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS capacity INTEGER DEFAULT 60;
+ALTER TABLE classes ADD COLUMN IF NOT EXISTS enrolled_count INTEGER DEFAULT 0;
+
+-- Library Physical Storage Wings, Shelves & Racks
+CREATE TABLE IF NOT EXISTS wings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) UNIQUE NOT NULL,
+    campus_id TEXT REFERENCES campuses(id) ON DELETE CASCADE,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    floor VARCHAR(100) DEFAULT 'Ground Floor',
+    primary_focus VARCHAR(255),
+    max_capacity INTEGER DEFAULT 5000,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS shelves (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    wing_id UUID REFERENCES wings(id) ON DELETE SET NULL,
+    code VARCHAR(50),
+    name VARCHAR(255) UNIQUE NOT NULL,
+    wing_name VARCHAR(255),
+    genre VARCHAR(255),
+    tiers INTEGER DEFAULT 5,
+    capacity INTEGER DEFAULT 500,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE shelves ADD COLUMN IF NOT EXISTS wing_id UUID REFERENCES wings(id) ON DELETE SET NULL;
+ALTER TABLE shelves ADD COLUMN IF NOT EXISTS code VARCHAR(50);
+ALTER TABLE shelves ADD COLUMN IF NOT EXISTS wing_name VARCHAR(255);
+ALTER TABLE shelves ADD COLUMN IF NOT EXISTS genre VARCHAR(255);
+ALTER TABLE shelves ADD COLUMN IF NOT EXISTS tiers INTEGER DEFAULT 5;
+ALTER TABLE shelves ADD COLUMN IF NOT EXISTS capacity INTEGER DEFAULT 500;
 
 CREATE TABLE IF NOT EXISTS racks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     shelf_id UUID REFERENCES shelves(id) ON DELETE CASCADE,
+    code VARCHAR(50),
     name VARCHAR(100) NOT NULL,
+    shelf_name VARCHAR(255),
+    row_level VARCHAR(100) DEFAULT 'Tier 1',
+    max_slots INTEGER DEFAULT 80,
+    stored_books INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE racks ADD COLUMN IF NOT EXISTS code VARCHAR(50);
+ALTER TABLE racks ADD COLUMN IF NOT EXISTS shelf_name VARCHAR(255);
+ALTER TABLE racks ADD COLUMN IF NOT EXISTS row_level VARCHAR(100) DEFAULT 'Tier 1';
+ALTER TABLE racks ADD COLUMN IF NOT EXISTS max_slots INTEGER DEFAULT 80;
+ALTER TABLE racks ADD COLUMN IF NOT EXISTS stored_books INTEGER DEFAULT 0;
 
 -- =============================================================================
 -- 3. STUDENTS, MEMBERS & FACULTY DIRECTORY (TYPE SAFE CONVERSION)
@@ -119,18 +223,6 @@ END $$;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS nfc_tag_id VARCHAR(100);
 ALTER TABLE students ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'ACTIVE';
 ALTER TABLE students ADD COLUMN IF NOT EXISTS borrow_limit INTEGER DEFAULT 3;
-
-INSERT INTO students (student_id, name, place, class_id, phone, email, nfc_tag_id)
-VALUES
-    ('REG-2026-001', 'Alexander Pierce', 'Main Campus', 'Class 10-A', '+91 98765 43210', 'alex.p@tgi.edu', 'NFC-REG-001'),
-    ('REG-2026-002', 'Sophia Bennett', 'Main Campus', 'Class 10-A', '+91 98765 43211', 'sophia.b@tgi.edu', 'NFC-REG-002'),
-    ('REG-2026-003', 'Liam Zhang', 'Tech Campus', 'CS-Year 2', '+91 98765 43212', 'liam.z@tgi.edu', 'NFC-REG-003'),
-    ('REG-2026-004', 'Emma Watson', 'Tech Campus', 'CS-Year 2', '+91 98765 43213', 'emma.w@tgi.edu', 'NFC-REG-004'),
-    ('REG-2026-005', 'Noah Miller', 'North Campus', 'Bio-Year 1', '+91 98765 43214', 'noah.m@tgi.edu', 'NFC-REG-005')
-ON CONFLICT (student_id) DO UPDATE SET
-    name = EXCLUDED.name,
-    class_id = EXCLUDED.class_id,
-    nfc_tag_id = EXCLUDED.nfc_tag_id;
 
 CREATE TABLE IF NOT EXISTS staff (
     id TEXT PRIMARY KEY,
@@ -415,9 +507,14 @@ CREATE TABLE IF NOT EXISTS notifications (
     message TEXT NOT NULL,
     type VARCHAR(50) NOT NULL,
     link VARCHAR(255),
+    target_audience VARCHAR(100) DEFAULT 'ALL',
+    priority VARCHAR(50) DEFAULT 'NORMAL',
     unread BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS target_audience VARCHAR(100) DEFAULT 'ALL';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS priority VARCHAR(50) DEFAULT 'NORMAL';
 
 CREATE TABLE IF NOT EXISTS chat_channels (
     id TEXT PRIMARY KEY,
@@ -571,6 +668,34 @@ CREATE TABLE IF NOT EXISTS hardware_devices (
     last_ping TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS nfc_tags (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tag_uid VARCHAR(100) UNIQUE NOT NULL,
+    tech_type VARCHAR(50) DEFAULT 'NTAG215',
+    member_id VARCHAR(100),
+    member_name VARCHAR(255),
+    member_role VARCHAR(50) DEFAULT 'STUDENT',
+    barcode VARCHAR(100),
+    campus_id TEXT REFERENCES campuses(id) ON DELETE SET NULL,
+    clearances JSONB DEFAULT '["Turnstile Gate", "Library Desk", "Digital Research Lab"]'::jsonb,
+    status VARCHAR(50) DEFAULT 'ACTIVE',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS id_card_templates (
+    id TEXT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    orientation VARCHAR(50) DEFAULT 'landscape',
+    width_mm DECIMAL(6, 2) DEFAULT 85.60,
+    height_mm DECIMAL(6, 2) DEFAULT 53.98,
+    theme_color VARCHAR(50) DEFAULT '#3b82f6',
+    accent_color VARCHAR(50) DEFAULT '#1e3a8a',
+    layout_config JSONB,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- =============================================================================
 -- 15. ROLE-BASED ACCESS CONTROL (RBAC) MATRIX
 -- =============================================================================
@@ -606,9 +731,12 @@ ON CONFLICT (role) DO UPDATE SET can_view_all_campuses = EXCLUDED.can_view_all_c
 -- =============================================================================
 
 ALTER TABLE library_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE institution_profile ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campuses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE degree_programs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE classes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shelves ENABLE ROW LEVEL SECURITY;
 ALTER TABLE racks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
@@ -638,6 +766,8 @@ ALTER TABLE audio_books ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tts_reading_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_shortcuts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hardware_devices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nfc_tags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE id_card_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
 
 -- Grant Full Open Access for Web Client Operations
@@ -648,14 +778,14 @@ BEGIN
     FOR tbl IN 
         SELECT tablename FROM pg_tables WHERE schemaname = 'public' 
         AND tablename IN (
-            'library_settings', 'campuses', 'departments', 'classes', 'shelves', 'racks',
+            'library_settings', 'institution_profile', 'campuses', 'departments', 'degree_programs', 'classes', 'wings', 'shelves', 'racks',
             'students', 'staff', 'books', 'book_copies', 'loans', 'computers', 'computer_sessions', 
             'workstation_policies', 'workstation_assignments', 'period_sessions', 
             'period_attendance', 'event_halls', 'events', 'event_attendees', 
-            'facility_requests', 'notifications', 'chat_channels', 'chat_messages',
+            'facility_requests', 'notifications', 'chat_channels', 'chat_messages', 
             'hall_passes', 'reading_logs', 'classroom_sets', 'campus_transfers', 
             'damage_incidents', 'audio_books', 'tts_reading_sessions', 'user_shortcuts', 
-            'hardware_devices', 'permissions'
+            'hardware_devices', 'nfc_tags', 'id_card_templates', 'permissions'
         )
     LOOP
         EXECUTE format('DROP POLICY IF EXISTS "Public Full Access" ON %I;', tbl);
@@ -677,3 +807,5 @@ CREATE INDEX IF NOT EXISTS idx_event_attendees_ticket ON event_attendees(ticket_
 CREATE INDEX IF NOT EXISTS idx_hallpasses_student ON hall_passes(student_id, status);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_channel ON chat_messages(channel_id);
 CREATE INDEX IF NOT EXISTS idx_user_shortcuts_user ON user_shortcuts(user_id);
+CREATE INDEX IF NOT EXISTS idx_nfc_tags_uid ON nfc_tags(tag_uid);
+CREATE INDEX IF NOT EXISTS idx_nfc_tags_barcode ON nfc_tags(barcode);

@@ -27,6 +27,8 @@ const STORAGE_KEYS = {
     WORKSTATION_POLICIES: 'erp_workstation_policies',
     WORKSTATION_ASSIGNMENTS: 'erp_workstation_assignments',
     INSTITUTION_PROFILE: 'erp_institution_profile',
+    NFC_TAGS: 'erp_nfc_tags',
+    ID_CARD_TEMPLATES: 'erp_id_card_templates',
     CURRENT_CAMPUS: 'erp_active_campus_id'
 };
 
@@ -1043,10 +1045,6 @@ export class ErpDataService {
             }
         }
 
-        // 2. Authenticate session & check in computer
-        const assignment = assignments.find(a => a.machine_code.toLowerCase() === machineCode.toLowerCase()) || { student_name: username, student_id: username };
-        const res = this.checkInComputer(machineCode, assignment.student_id, assignment.student_name, `${policy.period_name} [${policy.allowed_mode}]`);
-
         return {
             authenticated: true,
             student_id: assignment.student_id,
@@ -1055,6 +1053,111 @@ export class ErpDataService {
             policy: policy,
             session: res.session
         };
+    }
+
+    // --- NFC TAGS & SMART CARD PROVISIONING ---
+    getNfcTags(campusId = this.activeCampusId) {
+        const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.NFC_TAGS) || '[]');
+        return campusId === 'ALL' ? all : all.filter(t => !t.campus_id || t.campus_id === 'ALL' || t.campus_id === campusId);
+    }
+
+    saveNfcTag(tag) {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NFC_TAGS) || '[]');
+        if (tag.id) {
+            const idx = list.findIndex(t => t.id === tag.id);
+            if (idx !== -1) list[idx] = { ...list[idx], ...tag, updated_at: new Date().toISOString() };
+        } else {
+            tag.id = `nfc-${Date.now()}`;
+            tag.status = tag.status || 'ACTIVE';
+            tag.created_at = new Date().toISOString();
+            list.unshift(tag);
+        }
+        localStorage.setItem(STORAGE_KEYS.NFC_TAGS, JSON.stringify(list));
+        window.dispatchEvent(new CustomEvent('nfcTagsUpdated', { detail: list }));
+        return tag;
+    }
+
+    deleteNfcTag(id) {
+        let list = JSON.parse(localStorage.getItem(STORAGE_KEYS.NFC_TAGS) || '[]');
+        list = list.filter(t => t.id !== id);
+        localStorage.setItem(STORAGE_KEYS.NFC_TAGS, JSON.stringify(list));
+        window.dispatchEvent(new CustomEvent('nfcTagsUpdated', { detail: list }));
+    }
+
+    findNfcTagByUid(uid) {
+        if (!uid) return null;
+        const list = this.getNfcTags('ALL');
+        return list.find(t => t.tag_uid && t.tag_uid.toLowerCase() === uid.trim().toLowerCase());
+    }
+
+    findNfcTagByBarcode(barcode) {
+        if (!barcode) return null;
+        const list = this.getNfcTags('ALL');
+        return list.find(t => t.barcode && t.barcode.toLowerCase() === barcode.trim().toLowerCase());
+    }
+
+    // --- ID CARD DESIGNER TEMPLATES ---
+    getIdCardTemplates() {
+        const defaultTemplates = [
+            {
+                id: 'tmpl-cr80-landscape',
+                name: 'Standard CR80 Landscape (Institutional)',
+                orientation: 'landscape',
+                width_mm: 85.6,
+                height_mm: 53.98,
+                theme_color: '#3b82f6',
+                accent_color: '#1e3a8a',
+                bg_type: 'gradient',
+                show_logo: true,
+                show_photo: true,
+                show_barcode: true,
+                show_qrcode: true,
+                show_nfc_chip: true,
+                show_blood_group: true,
+                show_expiry: true,
+                show_signature: true,
+                is_default: true
+            },
+            {
+                id: 'tmpl-cr80-portrait',
+                name: 'Modern Executive Portrait Badge',
+                orientation: 'portrait',
+                width_mm: 53.98,
+                height_mm: 85.6,
+                theme_color: '#4f46e5',
+                accent_color: '#312e81',
+                bg_type: 'clean_light',
+                show_logo: true,
+                show_photo: true,
+                show_barcode: true,
+                show_qrcode: true,
+                show_nfc_chip: true,
+                show_blood_group: true,
+                show_expiry: true,
+                show_signature: true,
+                is_default: false
+            }
+        ];
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.ID_CARD_TEMPLATES) || JSON.stringify(defaultTemplates));
+    }
+
+    saveIdCardTemplate(tmpl) {
+        const list = this.getIdCardTemplates();
+        if (tmpl.id) {
+            const idx = list.findIndex(t => t.id === tmpl.id);
+            if (idx !== -1) list[idx] = { ...list[idx], ...tmpl };
+        } else {
+            tmpl.id = `tmpl-${Date.now()}`;
+            list.push(tmpl);
+        }
+        localStorage.setItem(STORAGE_KEYS.ID_CARD_TEMPLATES, JSON.stringify(list));
+        return tmpl;
+    }
+
+    deleteIdCardTemplate(id) {
+        let list = this.getIdCardTemplates();
+        list = list.filter(t => t.id !== id && !t.is_default);
+        localStorage.setItem(STORAGE_KEYS.ID_CARD_TEMPLATES, JSON.stringify(list));
     }
 }
 
