@@ -724,6 +724,9 @@ function initNotificationDrawer() {
                 <button class="btn btn-ghost btn-icon" id="btn-broadcast-notif" title="Broadcast Announcement (Admin)" style="color: var(--brand-primary); padding: 0.3rem;">
                     <i data-lucide="megaphone" style="width: 16px; height: 16px;"></i>
                 </button>
+                <button class="btn btn-ghost btn-icon" id="btn-manage-sent-notifs" title="Manage & Delete Sent Alerts (Admin)" style="color: #ef4444; padding: 0.3rem;">
+                    <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                </button>
                 <button class="btn btn-ghost btn-icon" id="btn-mark-all-read" title="Mark All Read" style="padding: 0.3rem;">
                     <i data-lucide="check-check" style="width: 16px; height: 16px;"></i>
                 </button>
@@ -771,6 +774,10 @@ function initNotificationDrawer() {
 
     document.getElementById('btn-broadcast-notif')?.addEventListener('click', () => {
         window.openBroadcastNotificationModal();
+    });
+
+    document.getElementById('btn-manage-sent-notifs')?.addEventListener('click', () => {
+        window.openManageNotificationsModal();
     });
 
     // Tab Filters
@@ -1191,6 +1198,138 @@ window.openBroadcastNotificationModal = function() {
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('active'), 10);
     if (window.lucide) lucide.createIcons();
+};
+
+window.openManageNotificationsModal = function() {
+    let modal = document.getElementById('modal-manage-notifications');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-manage-notifications';
+        modal.className = 'app-dialog-overlay';
+        document.body.appendChild(modal);
+    }
+
+    const renderManageList = () => {
+        const notifs = erp.getNotifications('ALL');
+        const count = notifs.length;
+
+        modal.innerHTML = `
+            <div class="app-dialog modal-responsive" style="max-width: 680px; width: 95vw; max-height: 85vh; display: flex; flex-direction: column; text-align: left; padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.85rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(239,68,68,0.12); color: #ef4444; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-primary);">Manage Sent Notifications</h3>
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0;">View, review, and permanently delete broadcast announcements</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-ghost btn-icon" id="btn-close-manage-notifs-modal"><i data-lucide="x" style="width: 18px; height: 18px;"></i></button>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">
+                        Total Sent Alerts: <span style="color: var(--brand-primary);">${count}</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-danger btn-sm" id="btn-clear-all-notifs" ${count === 0 ? 'disabled' : ''} style="font-size: 0.75rem;">
+                            <i data-lucide="trash" style="width: 13px; height: 13px;"></i> Delete All Alerts
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notifications Table / List -->
+                <div style="flex: 1; overflow-y: auto; max-height: 48vh; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-card);">
+                    ${count === 0 ? `
+                        <div style="padding: 3rem 1rem; text-align: center; color: var(--text-muted);">
+                            <i data-lucide="inbox" style="width: 36px; height: 36px; opacity: 0.4; margin-bottom: 0.5rem;"></i>
+                            <div style="font-weight: 600;">No notifications found</div>
+                            <p style="font-size: 0.78rem;">All sent alerts have been cleared from database.</p>
+                        </div>
+                    ` : `
+                        <div style="display: flex; flex-direction: column; divide-y: 1px solid var(--border-color);">
+                            ${notifs.map(n => `
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color); gap: 0.75rem;">
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                            <span class="badge" style="font-size: 0.65rem; padding: 0.15rem 0.45rem; background: rgba(59,130,246,0.12); color: var(--brand-primary);">${n.type || 'ALERT'}</span>
+                                            <span style="font-weight: 700; font-size: 0.88rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${n.title || 'Untitled'}</span>
+                                        </div>
+                                        <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0 0 0.25rem 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                            ${n.message || ''}
+                                        </p>
+                                        <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 0.85rem;">
+                                            <span>📅 ${new Date(n.timestamp || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                            <span>🌐 ${n.campus_id || 'All Campuses'}</span>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-outline btn-sm btn-delete-single-notif" data-id="${n.id}" title="Permanently Delete" style="color: #ef4444; border-color: rgba(239,68,68,0.3); padding: 0.35rem 0.65rem; flex-shrink: 0;">
+                                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Delete
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+
+                <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
+                    <button type="button" class="btn btn-outline" id="btn-done-manage-notifs">Close</button>
+                </div>
+            </div>
+        `;
+
+        const closeModal = () => {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        };
+
+        modal.querySelector('#btn-close-manage-notifs-modal')?.addEventListener('click', closeModal);
+        modal.querySelector('#btn-done-manage-notifs')?.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        modal.querySelectorAll('.btn-delete-single-notif').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const notifId = btn.dataset.id;
+                btn.disabled = true;
+                btn.innerText = 'Deleting...';
+                await erp.deleteNotification(notifId);
+                window.app.toast("Notification deleted from database", "success", "Alert Removed", 2000);
+                renderManageList();
+                renderNotificationItems();
+                updateNotificationBadges();
+            });
+        });
+
+        modal.querySelector('#btn-clear-all-notifs')?.addEventListener('click', () => {
+            window.app.confirm("Are you sure you want to permanently delete ALL sent notifications from the database?", "Delete All Alerts", async () => {
+                const all = erp.getNotifications('ALL');
+                for (const n of all) {
+                    await erp.deleteNotification(n.id);
+                }
+                window.app.toast("All notifications have been wiped.", "info", "Database Cleared");
+                renderManageList();
+                renderNotificationItems();
+                updateNotificationBadges();
+            });
+        });
+
+        if (window.lucide) lucide.createIcons();
+    };
+
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('active'), 10);
+    renderManageList();
+
+    // Background sync from Supabase then re-render
+    if (typeof erp?.syncNotificationsFromSupabase === 'function') {
+        erp.syncNotificationsFromSupabase().then(() => {
+            renderManageList();
+        }).catch(() => {});
+    }
 };
 
 // ==========================================================================
