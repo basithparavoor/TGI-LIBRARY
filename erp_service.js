@@ -26,6 +26,7 @@ const STORAGE_KEYS = {
     HALL_PASSES: 'erp_hall_passes',
     WORKSTATION_POLICIES: 'erp_workstation_policies',
     WORKSTATION_ASSIGNMENTS: 'erp_workstation_assignments',
+    INSTITUTION_PROFILE: 'erp_institution_profile',
     CURRENT_CAMPUS: 'erp_active_campus_id'
 };
 
@@ -166,6 +167,36 @@ export class ErpDataService {
         } else {
             window.dispatchEvent(new CustomEvent('campusChanged', { detail: { campusId: this.activeCampusId } }));
         }
+    // --- INSTITUTION PROFILE & BRANDING ---
+    getInstitutionProfile() {
+        const defaultProfile = {
+            name: 'TGI INSTITUTION',
+            tagline: 'ERP & Facility Suite',
+            reg_code: 'TGI-UNIV-2026',
+            email: 'admin@tgi.edu',
+            phone: '+91 80 2345 6789',
+            website: 'https://tgi.edu',
+            address: 'Bangalore, Karnataka, India',
+            logo_url: '',
+            favicon_url: '',
+            established_year: '1998'
+        };
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.INSTITUTION_PROFILE) || JSON.stringify(defaultProfile));
+    }
+
+    saveInstitutionProfile(profile) {
+        const current = this.getInstitutionProfile();
+        const updated = { ...current, ...profile };
+        localStorage.setItem(STORAGE_KEYS.INSTITUTION_PROFILE, JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent('institutionProfileUpdated', { detail: updated }));
+        return updated;
+    }
+
+    resetInstitutionProfile() {
+        localStorage.removeItem(STORAGE_KEYS.INSTITUTION_PROFILE);
+        const def = this.getInstitutionProfile();
+        window.dispatchEvent(new CustomEvent('institutionProfileUpdated', { detail: def }));
+        return def;
     }
 
     // --- COMPUTERS & WORKSTATION TRACKING ---

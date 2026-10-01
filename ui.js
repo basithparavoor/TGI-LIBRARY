@@ -148,6 +148,8 @@ function renderDefaultPaletteItems() {
         <div class="cmd-item" onclick="window.location.href='workstation_agent.html'"><i data-lucide="lock"></i> <div><div style="font-weight: 600;">PC Classroom Locker & Focus Kiosk</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Single-student login verification & allowed app whitelist</div></div></div>
         <div class="cmd-item" onclick="window.location.href='hallpass.html'"><i data-lucide="footprints"></i> <div><div style="font-weight: 600;">Entrance Verification & Hall Passes</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Track student arrival times & prevent hallway wandering</div></div></div>
         <div class="cmd-item" onclick="window.location.href='audio_station.html'"><i data-lucide="volume-2"></i> <div><div style="font-weight: 600;">Read-Aloud & Accessibility Audio Station</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Natural speech synthesizer & karaoke sentence highlighter</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='academic_structure.html'"><i data-lucide="network"></i> <div><div style="font-weight: 600;">Academic Structure Management</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Faculties, academic departments, degree programs & class sections</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='library_storage.html'"><i data-lucide="archive"></i> <div><div style="font-weight: 600;">Library Storage & Locations</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Storage wings, stack rooms, shelves, rack compartments & live matrix</div></div></div>
         <div class="cmd-item" onclick="window.location.href='campus_portal.html'"><i data-lucide="shield-check"></i> <div><div style="font-weight: 600;">Campus Heads & Dean Portal</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Facility requests, approvals & executive oversight</div></div></div>
         <div class="cmd-item" onclick="window.location.href='reports.html'"><i data-lucide="bar-chart-3"></i> <div><div style="font-weight: 600;">Dynamic Report Engine</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Cross-campus analytics, computer logs, attendance & PDF export</div></div></div>
         <div class="cmd-item" onclick="window.location.href='access_control.html'"><i data-lucide="lock"></i> <div><div style="font-weight: 600;">Access Control & RBAC Matrix</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Manage granular role permissions and data governance</div></div></div>
@@ -483,6 +485,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 sidebarContainer.querySelectorAll('.nav-item').forEach(item => {
                     if (item.getAttribute('href') === currentPath) item.classList.add('active');
                 });
+                applyInstitutionBranding();
             }
         } catch (e) {
             console.warn("Could not load sidebar.html", e);
@@ -687,22 +690,7 @@ function initNotificationDrawer() {
     });
 
     document.getElementById('btn-broadcast-notif')?.addEventListener('click', () => {
-        const title = prompt('Broadcast Title:');
-        if (!title) return;
-        const msg = prompt('Broadcast Announcement Message:');
-        if (!msg) return;
-
-        erp.createNotification({
-            title: title.trim(),
-            message: msg.trim(),
-            type: 'BROADCAST',
-            campus_id: 'ALL'
-        });
-
-        playSynthSound('success');
-        window.app.toast('Institutional broadcast announcement transmitted!', 'success', 'Broadcast Sent');
-        renderNotificationItems();
-        updateNotificationBadges();
+        window.openBroadcastNotificationModal();
     });
 
     // Tab Filters
@@ -858,7 +846,153 @@ function formatTimeAgo(dateStr) {
     if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
     if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+export function applyInstitutionBranding() {
+    const profile = erp.getInstitutionProfile();
+    if (!profile) return;
+
+    if (profile.name) {
+        const parts = document.title.split(' - ');
+        const section = parts[0] || 'System';
+        document.title = `${section} - ${profile.name}`;
+    }
+
+    if (profile.favicon_url) {
+        let link = document.querySelector("link[rel*='icon']");
+        if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.head.appendChild(link);
+        }
+        link.href = profile.favicon_url;
+    }
+
+    const sidebar = document.getElementById('sidebar-container');
+    if (sidebar) {
+        const brandTitle = sidebar.querySelector('.brand h2');
+        const brandTagline = sidebar.querySelector('.brand p');
+        const brandIcon = sidebar.querySelector('.brand > div:first-child');
+        if (brandTitle && profile.name) brandTitle.innerText = profile.name;
+        if (brandTagline && profile.tagline) brandTagline.innerText = profile.tagline;
+        if (brandIcon) {
+            if (profile.logo_url) {
+                brandIcon.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+            } else {
+                brandIcon.innerHTML = `<i data-lucide="building-2" style="width: 20px; height: 20px;"></i>`;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+    }
 }
+
+window.addEventListener('institutionProfileUpdated', applyInstitutionBranding);
+
+window.openBroadcastNotificationModal = function() {
+    let modal = document.getElementById('modal-broadcast-notification');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-broadcast-notification';
+        modal.className = 'app-dialog-overlay';
+        const campuses = erp.getCampuses();
+        const campusOptions = campuses.map(c => `<option value="${c.id}">${c.name} (${c.code})</option>`).join('');
+
+        modal.innerHTML = `
+            <div class="app-dialog" style="max-width: 540px; text-align: left;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(59,130,246,0.1); color: var(--brand-primary); display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="megaphone" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 1.2rem; font-weight: 800; margin: 0;">Create Broadcast Alert</h3>
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0;">Push real-time alerts to library members & executive desks</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-ghost btn-icon" id="btn-close-broadcast-modal"><i data-lucide="x" style="width: 18px;"></i></button>
+                </div>
+
+                <form id="form-broadcast-alert">
+                    <div class="input-group" style="margin-bottom: 0.85rem;">
+                        <label>Alert Title *</label>
+                        <input type="text" id="bc-title" placeholder="e.g. Scheduled Lab Maintenance & Exam Lock" required>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom: 0.85rem;">
+                        <label>Message Content *</label>
+                        <textarea id="bc-message" rows="3" placeholder="Enter detailed notification content to be displayed across member and staff terminals..." required style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem;">
+                        <div class="input-group">
+                            <label>Notification Category</label>
+                            <select id="bc-type" style="padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); width: 100%;">
+                                <option value="BROADCAST">📢 General Broadcast</option>
+                                <option value="APPROVAL">🛡️ Executive Approval</option>
+                                <option value="OVERDUE">⚠️ Circulation Overdue</option>
+                                <option value="EVENT">🎟️ Event & Symposium</option>
+                                <option value="LAB_SESSION">💻 Lab & Workstation Alert</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Target Sub-Campus</label>
+                            <select id="bc-campus" style="padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); width: 100%;">
+                                <option value="ALL">🌐 All Multi-Campuses</option>
+                                ${campusOptions}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom: 1.25rem;">
+                        <label>Target Audience</label>
+                        <select id="bc-audience" style="padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); width: 100%;">
+                            <option value="ALL_MEMBERS">Everyone (Students, Faculty, Staff)</option>
+                            <option value="STUDENTS">Students & Enrolled Patrons Only</option>
+                            <option value="FACULTY">Faculty & Teaching Staff Only</option>
+                            <option value="ADMINS">Librarians & System Administrators Only</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                        <button type="button" class="btn btn-outline" id="btn-cancel-broadcast">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="background: var(--brand-primary);"><i data-lucide="send" style="width: 15px;"></i> Send Push Notification</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#btn-close-broadcast-modal')?.addEventListener('click', () => modal.style.display = 'none');
+        modal.querySelector('#btn-cancel-broadcast')?.addEventListener('click', () => modal.style.display = 'none');
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+
+        modal.querySelector('#form-broadcast-alert')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('bc-title').value.trim();
+            const message = document.getElementById('bc-message').value.trim();
+            const type = document.getElementById('bc-type').value;
+            const campusId = document.getElementById('bc-campus').value;
+
+            erp.createNotification({
+                title,
+                message,
+                type,
+                campus_id: campusId,
+                timestamp: new Date().toISOString()
+            });
+
+            playSynthSound('success');
+            window.app.toast(`Broadcast notification "${title}" sent!`, 'success', 'Broadcast Live');
+            modal.style.display = 'none';
+            document.getElementById('form-broadcast-alert').reset();
+            renderNotificationItems();
+            updateNotificationBadges();
+        });
+    }
+
+    modal.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+};
 
 // ==========================================================================
 // PREMIUM ADMIN MESSENGER & HELPDESK WIDGET

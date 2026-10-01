@@ -68,164 +68,157 @@ settingsForm?.addEventListener('submit', async (e) => {
     }
 });
 
-// --- HIERARCHICAL MASTER DATA ---
-async function loadHierarchicalData() {
-    const acaTree = document.getElementById('tree-academic');
-    const locTree = document.getElementById('tree-locations');
+// --- INSTITUTION PROFILE & BRANDING ---
+let currentInstitutionLogo = '';
+let currentInstitutionFavicon = '';
 
-    try {
-        const { data: depts, error: deptErr } = await supabase
-            .from('departments')
-            .select('id, name, classes(id, name)')
-            .order('name');
+function loadInstitutionProfile() {
+    const profile = erp.getInstitutionProfile();
+    document.getElementById('inst-name').value = profile.name || '';
+    document.getElementById('inst-tagline').value = profile.tagline || '';
+    document.getElementById('inst-reg-code').value = profile.reg_code || '';
+    document.getElementById('inst-est-year').value = profile.established_year || '';
+    document.getElementById('inst-email').value = profile.email || '';
+    document.getElementById('inst-phone').value = profile.phone || '';
+    document.getElementById('inst-website').value = profile.website || '';
+    document.getElementById('inst-address').value = profile.address || '';
+    document.getElementById('inst-logo-url').value = profile.logo_url || '';
+    document.getElementById('inst-favicon-url').value = profile.favicon_url || '';
 
-        if (!deptErr && acaTree) {
-            if (!depts || depts.length === 0) {
-                acaTree.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">No departments added yet.</div>`;
-            } else {
-                acaTree.innerHTML = depts.map(dept => `
-                    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--bg-muted); border-bottom: 1px solid var(--border-color);">
-                            <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">${dept.name}</span>
-                            <div style="display: flex; gap: 0.35rem;">
-                                <button class="btn btn-outline btn-sm" onclick="window.addChildEntity('Class', 'classes', 'department_id', '${dept.id}')" title="Add Class" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
-                                    <i data-lucide="plus" style="width: 12px;"></i> Class
-                                </button>
-                                <button class="btn btn-ghost btn-sm" onclick="window.editEntity('departments', '${dept.id}', '${dept.name.replace(/'/g, "\\'")}')" title="Edit" style="padding: 0.2rem 0.4rem;">
-                                    <i data-lucide="edit-3" style="width: 14px;"></i>
-                                </button>
-                                <button class="btn btn-ghost btn-sm" style="color: var(--danger); padding: 0.2rem 0.4rem;" onclick="window.deleteEntity('departments', '${dept.id}', '${dept.name.replace(/'/g, "\\'")}')" title="Delete">
-                                    <i data-lucide="trash-2" style="width: 14px;"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div style="padding: 0.5rem 1rem; display: flex; flex-direction: column; gap: 0.35rem;">
-                            ${dept.classes && dept.classes.length ? dept.classes.map(cls => `
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; font-size: 0.85rem;">
-                                    <span style="display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
-                                        <i data-lucide="corner-down-right" style="width: 14px; color: var(--brand-primary);"></i> ${cls.name}
-                                    </span>
-                                    <div style="display: flex; gap: 0.2rem;">
-                                        <button class="btn btn-ghost btn-sm" style="padding: 0.15rem 0.35rem; color: var(--text-muted);" onclick="window.editEntity('classes', '${cls.id}', '${cls.name.replace(/'/g, "\\'")}')">
-                                            <i data-lucide="edit" style="width: 12px;"></i>
-                                        </button>
-                                        <button class="btn btn-ghost btn-sm" style="padding: 0.15rem 0.35rem; color: var(--danger);" onclick="window.deleteEntity('classes', '${cls.id}', '${cls.name.replace(/'/g, "\\'")}')">
-                                            <i data-lucide="x" style="width: 12px;"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            `).join('') : '<span style="font-size: 0.75rem; color: var(--text-muted);">No classes assigned yet.</span>'}
-                        </div>
-                    </div>
-                `).join('');
-            }
-        }
+    currentInstitutionLogo = profile.logo_url || '';
+    currentInstitutionFavicon = profile.favicon_url || '';
 
-        const { data: shelves, error: shelfErr } = await supabase
-            .from('shelves')
-            .select('id, name, racks(id, name)')
-            .order('name');
+    renderLogoPreview();
+    renderFaviconPreview();
+}
 
-        if (!shelfErr && locTree) {
-            if (!shelves || shelves.length === 0) {
-                locTree.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">No shelves created yet.</div>`;
-            } else {
-                locTree.innerHTML = shelves.map(shelf => `
-                    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--bg-muted); border-bottom: 1px solid var(--border-color);">
-                            <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">${shelf.name}</span>
-                            <div style="display: flex; gap: 0.35rem;">
-                                <button class="btn btn-outline btn-sm" onclick="window.addChildEntity('Rack', 'racks', 'shelf_id', '${shelf.id}')" title="Add Rack" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
-                                    <i data-lucide="plus" style="width: 12px;"></i> Rack
-                                </button>
-                                <button class="btn btn-ghost btn-sm" onclick="window.editEntity('shelves', '${shelf.id}', '${shelf.name.replace(/'/g, "\\'")}')" title="Edit" style="padding: 0.2rem 0.4rem;">
-                                    <i data-lucide="edit-3" style="width: 14px;"></i>
-                                </button>
-                                <button class="btn btn-ghost btn-sm" style="color: var(--danger); padding: 0.2rem 0.4rem;" onclick="window.deleteEntity('shelves', '${shelf.id}', '${shelf.name.replace(/'/g, "\\'")}')" title="Delete">
-                                    <i data-lucide="trash-2" style="width: 14px;"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div style="padding: 0.5rem 1rem; display: flex; flex-direction: column; gap: 0.35rem;">
-                            ${shelf.racks && shelf.racks.length ? shelf.racks.map(rack => `
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; font-size: 0.85rem;">
-                                    <span style="display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
-                                        <i data-lucide="corner-down-right" style="width: 14px; color: var(--brand-primary);"></i> ${rack.name}
-                                    </span>
-                                    <div style="display: flex; gap: 0.2rem;">
-                                        <button class="btn btn-ghost btn-sm" style="padding: 0.15rem 0.35rem; color: var(--text-muted);" onclick="window.editEntity('racks', '${rack.id}', '${rack.name.replace(/'/g, "\\'")}')">
-                                            <i data-lucide="edit" style="width: 12px;"></i>
-                                        </button>
-                                        <button class="btn btn-ghost btn-sm" style="padding: 0.15rem 0.35rem; color: var(--danger);" onclick="window.deleteEntity('racks', '${rack.id}', '${rack.name.replace(/'/g, "\\'")}')">
-                                            <i data-lucide="x" style="width: 12px;"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            `).join('') : '<span style="font-size: 0.75rem; color: var(--text-muted);">No racks assigned yet.</span>'}
-                        </div>
-                    </div>
-                `).join('');
-            }
-        }
+function renderLogoPreview() {
+    const preview = document.getElementById('inst-logo-preview');
+    if (!preview) return;
+    if (currentInstitutionLogo) {
+        preview.innerHTML = `<img src="${currentInstitutionLogo}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">`;
+    } else {
+        preview.innerHTML = `<i data-lucide="building-2" style="width: 24px; height: 24px; color: var(--text-muted);"></i>`;
         if (window.lucide) lucide.createIcons();
-    } catch (e) {
-        console.error("Master data hierarchy load error:", e);
     }
 }
 
-window.addParentEntity = function(label, table) {
-    window.app.prompt(`Enter name for new ${label}:`, `Add ${label}`, async (val) => {
-        if (val && val.trim()) {
-            await supabase.from(table).insert([{ name: val.trim() }]);
-            window.app.toast(`Added ${label} "${val.trim()}".`, "success", "Entity Created");
-            loadHierarchicalData();
-        }
-    });
-};
+function renderFaviconPreview() {
+    const preview = document.getElementById('inst-favicon-preview');
+    if (!preview) return;
+    if (currentInstitutionFavicon) {
+        preview.innerHTML = `<img src="${currentInstitutionFavicon}" alt="Favicon" style="width: 100%; height: 100%; object-fit: contain;">`;
+    } else {
+        preview.innerHTML = `<i data-lucide="bookmark" style="width: 20px; height: 20px; color: var(--text-muted);"></i>`;
+        if (window.lucide) lucide.createIcons();
+    }
+}
 
-window.addChildEntity = function(label, table, foreignKey, parentId) {
-    window.app.prompt(`Enter name for new ${label}:`, `Add ${label}`, async (val) => {
-        if (val && val.trim()) {
-            const payload = { name: val.trim() };
-            payload[foreignKey] = parentId;
-            await supabase.from(table).insert([payload]);
-            window.app.toast(`Added ${label} "${val.trim()}".`, "success", "Entity Created");
-            loadHierarchicalData();
-        }
-    });
-};
+// Logo file picker
+document.getElementById('inst-logo-file')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            currentInstitutionLogo = evt.target.result;
+            document.getElementById('inst-logo-url').value = '';
+            renderLogoPreview();
+        };
+        reader.readAsDataURL(file);
+    }
+});
 
-window.editEntity = function(table, id, currentName) {
-    window.app.prompt(`Enter updated name for "${currentName}":`, `Edit Name`, async (val) => {
-        if (val && val.trim() && val.trim() !== currentName) {
-            await supabase.from(table).update({ name: val.trim() }).eq('id', id);
-            window.app.toast("Name updated successfully.", "success", "Updated");
-            loadHierarchicalData();
-        }
-    });
-};
+document.getElementById('inst-logo-url')?.addEventListener('input', (e) => {
+    currentInstitutionLogo = e.target.value.trim();
+    renderLogoPreview();
+});
 
-window.deleteEntity = function(table, id, name) {
-    window.app.confirm(`Delete "${name}"? Any sub-items will also be removed.`, `Delete Item`, async () => {
-        await supabase.from(table).delete().eq('id', id);
-        window.app.toast(`"${name}" deleted.`, "info", "Deleted");
-        loadHierarchicalData();
+document.getElementById('btn-clear-logo')?.addEventListener('click', () => {
+    currentInstitutionLogo = '';
+    document.getElementById('inst-logo-url').value = '';
+    const fileInput = document.getElementById('inst-logo-file');
+    if (fileInput) fileInput.value = '';
+    renderLogoPreview();
+    window.app.toast('Logo removed from draft. Click "Save Profile" to apply.', 'info');
+});
+
+// Favicon file picker
+document.getElementById('inst-favicon-file')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            currentInstitutionFavicon = evt.target.result;
+            document.getElementById('inst-favicon-url').value = '';
+            renderFaviconPreview();
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+document.getElementById('inst-favicon-url')?.addEventListener('input', (e) => {
+    currentInstitutionFavicon = e.target.value.trim();
+    renderFaviconPreview();
+});
+
+document.getElementById('btn-clear-favicon')?.addEventListener('click', () => {
+    currentInstitutionFavicon = '';
+    document.getElementById('inst-favicon-url').value = '';
+    const fileInput = document.getElementById('inst-favicon-file');
+    if (fileInput) fileInput.value = '';
+    renderFaviconPreview();
+    window.app.toast('Favicon removed from draft. Click "Save Profile" to apply.', 'info');
+});
+
+// Save Institution Profile Form
+document.getElementById('form-institution-profile')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const profileData = {
+        name: document.getElementById('inst-name').value.trim(),
+        tagline: document.getElementById('inst-tagline').value.trim(),
+        reg_code: document.getElementById('inst-reg-code').value.trim(),
+        established_year: document.getElementById('inst-est-year').value.trim(),
+        email: document.getElementById('inst-email').value.trim(),
+        phone: document.getElementById('inst-phone').value.trim(),
+        website: document.getElementById('inst-website').value.trim(),
+        address: document.getElementById('inst-address').value.trim(),
+        logo_url: currentInstitutionLogo,
+        favicon_url: currentInstitutionFavicon
+    };
+
+    erp.saveInstitutionProfile(profileData);
+    window.app.toast(`Institution Profile & Branding for "${profileData.name}" saved!`, 'success', 'Profile Saved');
+});
+
+// Reset Institution Profile to Defaults
+document.getElementById('btn-reset-profile')?.addEventListener('click', () => {
+    window.app.confirm('Reset institution profile, logo, and favicon back to system default credentials?', 'Reset Profile', () => {
+        erp.resetInstitutionProfile();
+        loadInstitutionProfile();
+        window.app.toast('Institution profile reset to default.', 'info', 'Profile Reset');
     });
-};
+});
 
 // --- INSTITUTIONAL SUB-CAMPUSES ---
+let currentCampusLogo = '';
+
 function loadCampuses() {
     const tbody = document.getElementById('campuses-tbody');
     if (!tbody) return;
 
     const campuses = erp.getCampuses();
     if (campuses.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="padding: 2rem; text-align: center; color: var(--text-muted);">No campuses registered yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="padding: 2rem; text-align: center; color: var(--text-muted);">No campuses registered yet.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = campuses.map(c => `
         <tr>
+            <td>
+                <div style="width: 32px; height: 32px; border-radius: 6px; overflow: hidden; background: var(--bg-muted); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center;">
+                    ${c.logo_url ? `<img src="${c.logo_url}" alt="${c.name}" style="width: 100%; height: 100%; object-fit: cover;">` : `<i data-lucide="building-2" style="width: 16px; height: 16px; color: var(--brand-primary);"></i>`}
+                </div>
+            </td>
             <td style="font-family: var(--font-mono); font-weight: 700; color: var(--brand-primary);">${c.code}</td>
             <td style="font-weight: 700; color: var(--text-primary);">${c.name}</td>
             <td>${c.city || 'Bangalore'}</td>
@@ -251,10 +244,41 @@ function loadCampuses() {
 const modalCampus = document.getElementById('modal-campus');
 const formCampus = document.getElementById('form-campus');
 
+function renderCampusLogoPreview() {
+    const preview = document.getElementById('camp-logo-preview');
+    if (!preview) return;
+    if (currentCampusLogo) {
+        preview.innerHTML = `<img src="${currentCampusLogo}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover;">`;
+    } else {
+        preview.innerHTML = `<i data-lucide="building-2" style="width: 18px; height: 18px; color: var(--text-muted);"></i>`;
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+document.getElementById('camp-logo-file')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            currentCampusLogo = evt.target.result;
+            document.getElementById('camp-logo-url').value = '';
+            renderCampusLogoPreview();
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+document.getElementById('camp-logo-url')?.addEventListener('input', (e) => {
+    currentCampusLogo = e.target.value.trim();
+    renderCampusLogoPreview();
+});
+
 document.getElementById('btn-add-campus')?.addEventListener('click', () => {
     document.getElementById('modal-campus-title').innerText = 'Register Institutional Campus';
     document.getElementById('camp-id').value = '';
+    currentCampusLogo = '';
     formCampus.reset();
+    renderCampusLogoPreview();
     modalCampus.classList.add('active');
 });
 
@@ -272,6 +296,9 @@ window.editCampus = function(id) {
     document.getElementById('camp-head').value = c.head_name || '';
     document.getElementById('camp-email').value = c.email || '';
     document.getElementById('camp-phone').value = c.phone || '';
+    document.getElementById('camp-logo-url').value = c.logo_url || '';
+    currentCampusLogo = c.logo_url || '';
+    renderCampusLogoPreview();
 
     modalCampus.classList.add('active');
 };
@@ -294,7 +321,8 @@ formCampus?.addEventListener('submit', (e) => {
         city: document.getElementById('camp-city').value.trim(),
         head_name: document.getElementById('camp-head').value.trim(),
         email: document.getElementById('camp-email').value.trim(),
-        phone: document.getElementById('camp-phone').value.trim()
+        phone: document.getElementById('camp-phone').value.trim(),
+        logo_url: currentCampusLogo
     };
 
     erp.saveCampus(campusData);
@@ -489,8 +517,8 @@ document.getElementById('btn-test-nfc-tap')?.addEventListener('click', async () 
 
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', () => {
+    loadInstitutionProfile();
     loadSettings();
     loadCampuses();
-    loadHierarchicalData();
     renderShortcutsGrid();
 });
