@@ -43,7 +43,9 @@ if (logoutBtn) {
 
 // --- ROUTE PROTECTION & ROLE FETCHING ---
 export async function checkSession() {
-    const isPublicPage = window.location.pathname.includes('login.html') || window.location.pathname.includes('student_portal.html');
+    const isPublicPage = window.location.pathname.includes('login.html') || 
+                         window.location.pathname.includes('student_portal.html') || 
+                         window.location.pathname.includes('kiosk.html');
     
     try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -53,6 +55,12 @@ export async function checkSession() {
             window.location.href = 'login.html';
             return null;
         }
+
+        // If on login page and already logged in, redirect to index
+        if (session && window.location.pathname.includes('login.html')) {
+            window.location.href = 'index.html';
+            return session.user;
+        }
         
         if (session) {
             let userName = session.user.email ? session.user.email.split('@')[0] : 'Admin';
@@ -61,12 +69,15 @@ export async function checkSession() {
             try {
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('name')
+                    .select('name, role')
                     .eq('id', session.user.id)
                     .maybeSingle();
                     
                 if (profile && profile.name) {
                     userName = profile.name;
+                }
+                if (profile && profile.role) {
+                    roleName = profile.role;
                 }
             } catch (err) {
                 console.warn("Using fallback user profile.");
@@ -78,6 +89,11 @@ export async function checkSession() {
                 name: userName,
                 role: roleName
             };
+
+            localStorage.setItem('user_id', session.user.id);
+            localStorage.setItem('user_name', userName);
+            localStorage.setItem('user_role', roleName);
+            localStorage.setItem('user_email', session.user.email);
             
             return window.currentUser;
         }
@@ -86,8 +102,12 @@ export async function checkSession() {
     }
 }
 
-// Initialize session check if we are on a protected page
-const isPublicPage = window.location.pathname.includes('login.html') || window.location.pathname.includes('student_portal.html');
+// Initialize session check immediately
+const isPublicPage = window.location.pathname.includes('login.html') || 
+                     window.location.pathname.includes('student_portal.html') || 
+                     window.location.pathname.includes('kiosk.html');
 if (!isPublicPage) {
+    checkSession();
+} else if (window.location.pathname.includes('login.html')) {
     checkSession();
 }

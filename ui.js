@@ -187,8 +187,16 @@ document.addEventListener('keydown', (e) => {
         e.stopPropagation();
         window.toggleCommandPalette();
     }
-    if (e.key === 'Escape' && cmdOverlay && cmdOverlay.style.display === 'flex') {
-        window.toggleCommandPalette();
+    if (e.key === 'Escape') {
+        if (cmdOverlay && cmdOverlay.style.display === 'flex') {
+            window.toggleCommandPalette();
+        }
+        const sidebarContainer = document.getElementById('sidebar-container');
+        const mobileOverlay = document.getElementById('mobile-sidebar-overlay');
+        if (sidebarContainer?.classList.contains('open')) {
+            sidebarContainer.classList.remove('open');
+            mobileOverlay?.classList.remove('active');
+        }
     }
 });
 
@@ -490,6 +498,7 @@ window.printLibraryCard = function(name, idNumber, roleOrClass = 'Member', nfcTa
 document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
     startLiveClock();
+    applyInstitutionBranding();
 
     // 1. Mobile Overlay
     let mobileOverlay = document.getElementById('mobile-sidebar-overlay');
@@ -509,8 +518,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const currentPath = window.location.pathname.split('/').pop() || 'index.html';
                 sidebarContainer.querySelectorAll('.nav-item').forEach(item => {
                     if (item.getAttribute('href') === currentPath) item.classList.add('active');
+                    // Automatically close mobile sidebar on nav click
+                    item.addEventListener('click', () => {
+                        if (window.innerWidth <= 1024) {
+                            sidebarContainer.classList.remove('open');
+                            mobileOverlay?.classList.remove('active');
+                        }
+                    });
                 });
+
+                // Mobile Sidebar Close Button
+                const closeSidebarBtn = document.getElementById('mobile-sidebar-close-btn');
+                closeSidebarBtn?.addEventListener('click', () => {
+                    sidebarContainer.classList.remove('open');
+                    mobileOverlay?.classList.remove('active');
+                });
+
                 applyInstitutionBranding();
+                if (window.lucide) lucide.createIcons();
             }
         } catch (e) {
             console.warn("Could not load sidebar.html", e);
@@ -528,11 +553,33 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Campus Switcher Selector
                 const campusSelect = document.getElementById('topbar-campus-select');
                 if (campusSelect) {
-                    campusSelect.value = erp.getActiveCampusId();
+                    const renderCampusOptions = () => {
+                        const campuses = erp.getCampuses();
+                        let opts = `<option value="ALL">🌐 All Campuses</option>`;
+                        if (campuses && campuses.length > 0) {
+                            campuses.forEach(c => {
+                                opts += `<option value="${c.id}">${c.name} (${c.code || 'CAMPUS'})</option>`;
+                            });
+                        }
+                        campusSelect.innerHTML = opts;
+                        const currentActive = erp.getActiveCampusId();
+                        if (currentActive && (currentActive === 'ALL' || campuses.some(c => c.id === currentActive))) {
+                            campusSelect.value = currentActive;
+                        } else {
+                            campusSelect.value = "ALL";
+                        }
+                    };
+
+                    renderCampusOptions();
+
                     campusSelect.addEventListener('change', (e) => {
                         erp.setActiveCampusId(e.target.value);
-                        window.app.toast(`Switched active view to: ${e.target.options[e.target.selectedIndex].text}`, "info", "Campus Changed", 2500);
+                        const selectedText = e.target.options[e.target.selectedIndex]?.text || e.target.value;
+                        window.app.toast(`Switched active view to: ${selectedText}`, "info", "Campus Changed", 2500);
                     });
+
+                    window.addEventListener('campusChanged', renderCampusOptions);
+                    window.addEventListener('institutionProfileUpdated', renderCampusOptions);
                 }
 
                 // Dynamic Academic Period Status
@@ -592,7 +639,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // Mobile Menu Toggle
                 const menuBtn = document.getElementById('mobile-menu-btn');
-                menuBtn?.addEventListener('click', () => {
+                menuBtn?.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     sidebarContainer?.classList.add('open');
                     mobileOverlay?.classList.add('active');
                 });
@@ -877,22 +925,39 @@ export function applyInstitutionBranding() {
     const profile = erp.getInstitutionProfile();
     if (!profile) return;
 
-    if (profile.name) {
-        const parts = document.title.split(' - ');
-        const section = parts[0] || 'System';
-        document.title = `${section} - ${profile.name}`;
-    }
-
+    // 1. Universal Favicon
     if (profile.favicon_url) {
-        let link = document.querySelector("link[rel*='icon']");
-        if (!link) {
-            link = document.createElement('link');
-            link.rel = 'icon';
-            document.head.appendChild(link);
+        let iconLink = document.querySelector("link[rel='icon']");
+        if (!iconLink) {
+            iconLink = document.createElement('link');
+            iconLink.rel = 'icon';
+            document.head.appendChild(iconLink);
         }
-        link.href = profile.favicon_url;
+        iconLink.href = profile.favicon_url;
+
+        let shortcutLink = document.querySelector("link[rel='shortcut icon']");
+        if (!shortcutLink) {
+            shortcutLink = document.createElement('link');
+            shortcutLink.rel = 'shortcut icon';
+            document.head.appendChild(shortcutLink);
+        }
+        shortcutLink.href = profile.favicon_url;
     }
 
+    // 2. Document Title
+    if (profile.name) {
+        if (document.title.includes(' - ')) {
+            const parts = document.title.split(' - ');
+            const section = parts[0] || 'Library ERP';
+            document.title = `${section} - ${profile.name}`;
+        } else if (document.title.includes(' | ')) {
+            const parts = document.title.split(' | ');
+            const section = parts[0] || 'Library ERP';
+            document.title = `${section} | ${profile.name}`;
+        }
+    }
+
+    // 3. Admin Sidebar Branding
     const sidebar = document.getElementById('sidebar-container');
     if (sidebar) {
         const brandTitle = sidebar.querySelector('.brand h2');
@@ -915,8 +980,57 @@ export function applyInstitutionBranding() {
             }
         }
     }
+
+    // 4. Login Page Branding
+    const loginLogo = document.getElementById('login-brand-logo');
+    const loginTitle = document.getElementById('login-brand-title');
+    const loginTagline = document.getElementById('login-brand-tagline');
+    if (loginLogo && profile.logo_url) {
+        loginLogo.style.background = 'transparent';
+        loginLogo.style.boxShadow = 'none';
+        loginLogo.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">`;
+    }
+    if (loginTitle && profile.name) loginTitle.innerText = profile.name;
+    if (loginTagline && profile.tagline) loginTagline.innerText = profile.tagline;
+
+    // 5. Kiosk Page Branding
+    const kioskLogo = document.getElementById('kiosk-brand-logo');
+    const kioskTitle = document.getElementById('kiosk-brand-title');
+    const kioskTagline = document.getElementById('kiosk-brand-tagline');
+    if (kioskLogo && profile.logo_url) {
+        kioskLogo.style.background = 'transparent';
+        kioskLogo.style.boxShadow = 'none';
+        kioskLogo.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">`;
+    }
+    if (kioskTitle && profile.name) kioskTitle.innerText = `${profile.name} KIOSK`;
+    if (kioskTagline && profile.tagline) kioskTagline.innerText = profile.tagline;
+
+    // 6. Student Portal Branding
+    const portalHeader = document.getElementById('portal-brand-header');
+    const portalLogo = document.getElementById('portal-brand-logo');
+    const scInstName = document.getElementById('sc-inst-name');
+    if (portalHeader && profile.name) portalHeader.innerText = `${profile.name} PORTAL`;
+    if (scInstName && profile.name) scInstName.innerText = profile.name.toUpperCase();
+    if (portalLogo && profile.logo_url) {
+        portalLogo.style.background = 'transparent';
+        portalLogo.style.boxShadow = 'none';
+        portalLogo.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">`;
+    }
+
+    // 7. Lockscreen / Agent Branding
+    const lockscreenInstName = document.getElementById('lockscreen-inst-name');
+    if (lockscreenInstName && profile.name) {
+        lockscreenInstName.innerText = `${profile.name.toUpperCase()} • WORKSTATION AGENT`;
+    }
+
+    // 8. Universal Institution Labels
+    document.querySelectorAll('.inst-name-display, #inst-name-display').forEach(el => {
+        if (profile.name) el.innerText = profile.name;
+    });
 }
 
+// Apply branding on load and upon storage updates
+applyInstitutionBranding();
 window.addEventListener('institutionProfileUpdated', applyInstitutionBranding);
 
 window.openBroadcastNotificationModal = function() {

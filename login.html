@@ -49,12 +49,12 @@
         <div class="card card-glass auth-card animate-scale-in">
             <!-- Brand Icon & Header -->
             <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1.75rem;">
-                <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--brand-gradient); color: white; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-glow-brand);">
+                <div id="login-brand-logo" style="width: 44px; height: 44px; border-radius: 12px; background: var(--brand-gradient); color: white; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-glow-brand);">
                     <i data-lucide="library" style="width: 24px; height: 24px;"></i>
                 </div>
                 <div>
-                    <h2 style="font-size: 1.35rem; font-weight: 800; margin: 0; color: var(--text-primary); letter-spacing: -0.02em;">TGI LIBRARY</h2>
-                    <p style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin: 0;">Management System</p>
+                    <h2 id="login-brand-title" style="font-size: 1.35rem; font-weight: 800; margin: 0; color: var(--text-primary); letter-spacing: -0.02em;">TGI LIBRARY</h2>
+                    <p id="login-brand-tagline" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin: 0;">Management System</p>
                 </div>
             </div>
 
@@ -110,5 +110,6 @@
         });
     </script>
     <script type="module" src="auth.js"></script>
+    <script type="module" src="ui.js"></script>
 </body>
 </html>
