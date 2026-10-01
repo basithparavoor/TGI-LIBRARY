@@ -40,14 +40,14 @@ ON CONFLICT (setting_key) DO UPDATE SET
 -- Institution Global Profile & Branding
 CREATE TABLE IF NOT EXISTS institution_profile (
     id VARCHAR(50) PRIMARY KEY DEFAULT 'primary_institution',
-    name VARCHAR(255) NOT NULL DEFAULT 'TGI INSTITUTION',
-    tagline VARCHAR(255) DEFAULT 'ERP & Facility Suite',
-    reg_code VARCHAR(100) DEFAULT 'TGI-UNIV-2026',
+    name VARCHAR(255) NOT NULL DEFAULT 'INSTITUTION NAME',
+    tagline VARCHAR(255) DEFAULT 'ERP & Library Management Suite',
+    reg_code VARCHAR(100) DEFAULT 'REG-2026-001',
     established_year VARCHAR(50) DEFAULT '1998',
-    email VARCHAR(255) DEFAULT 'admin@tgi.edu',
-    phone VARCHAR(50) DEFAULT '+91 80 2345 6789',
-    website VARCHAR(255) DEFAULT 'https://tgi.edu',
-    address TEXT DEFAULT 'Bangalore, Karnataka, India',
+    email VARCHAR(255) DEFAULT 'admin@institution.edu',
+    phone VARCHAR(50) DEFAULT '+1 555-0100',
+    website VARCHAR(255) DEFAULT '',
+    address TEXT DEFAULT 'Main Campus Headquarters',
     logo_url TEXT,
     favicon_url TEXT,
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -57,7 +57,7 @@ ALTER TABLE institution_profile ADD COLUMN IF NOT EXISTS logo_url TEXT;
 ALTER TABLE institution_profile ADD COLUMN IF NOT EXISTS favicon_url TEXT;
 
 INSERT INTO institution_profile (id, name, tagline, reg_code, established_year, email, phone, website, address)
-VALUES ('primary_institution', 'TGI INSTITUTION', 'ERP & Facility Suite', 'TGI-UNIV-2026', '1998', 'admin@tgi.edu', '+91 80 2345 6789', 'https://tgi.edu', 'Bangalore, Karnataka, India')
+VALUES ('primary_institution', 'INSTITUTION NAME', 'ERP & Library Management Suite', 'REG-2026-001', '1998', 'admin@institution.edu', '+1 555-0100', '', 'Main Campus Headquarters')
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS campuses (
@@ -83,16 +83,6 @@ ALTER TABLE campuses ADD COLUMN IF NOT EXISTS capacity INTEGER DEFAULT 500;
 ALTER TABLE campuses ADD COLUMN IF NOT EXISTS established_year VARCHAR(50);
 ALTER TABLE campuses ADD COLUMN IF NOT EXISTS address TEXT;
 ALTER TABLE campuses ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'ACTIVE';
-
-INSERT INTO campuses (id, name, code, city, head_name, email, phone)
-VALUES 
-    ('camp-main', 'Main Metropolitan Campus', 'MMC', 'Bangalore', 'Dr. Arthur Pendelton', 'dean.main@tgi.edu', '+91 80 2345 6701'),
-    ('camp-tech', 'Technology & Engineering Campus', 'TEC', 'Whitefield', 'Prof. Evelyn Reed', 'dean.tech@tgi.edu', '+91 80 4123 8900'),
-    ('camp-north', 'North Sub-Campus (Life Sciences)', 'NSC', 'Yelahanka', 'Dr. Rajiv Menon', 'dean.north@tgi.edu', '+91 80 6789 1234')
-ON CONFLICT (id) DO UPDATE SET 
-    name = EXCLUDED.name, 
-    head_name = EXCLUDED.head_name,
-    email = EXCLUDED.email;
 
 -- Academic Departments, Degree Programs & Class Sections
 CREATE TABLE IF NOT EXISTS departments (
@@ -256,14 +246,6 @@ ALTER TABLE staff ADD COLUMN IF NOT EXISTS nfc_tag_id VARCHAR(100);
 ALTER TABLE staff ADD COLUMN IF NOT EXISTS qr_code VARCHAR(100);
 ALTER TABLE staff ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'ACTIVE';
 
-INSERT INTO staff (id, campus_id, employee_id, name, designation, department_id, email, phone, role, nfc_tag_id, qr_code)
-VALUES
-    ('staff-1', 'camp-main', 'FAC-001', 'Dr. Robert Oppenheim', 'Professor & Head of Dept', 'dept-cs', 'robert.o@tgi.edu', '+91 98450 11223', 'TEACHER', 'NFC-FAC-001', 'QR-FAC-001'),
-    ('staff-2', 'camp-main', 'LIB-001', 'Claire Dupont', 'Chief Librarian', 'dept-lib', 'claire.d@tgi.edu', '+91 98450 33445', 'LIBRARIAN', 'NFC-LIB-001', 'QR-LIB-001'),
-    ('staff-3', 'camp-main', 'ADM-001', 'Dr. Arthur Pendelton', 'Executive Campus Head', 'dept-admin', 'dean.main@tgi.edu', '+91 98450 55667', 'CAMPUS_HEAD', 'NFC-ADM-001', 'QR-ADM-001'),
-    ('staff-4', 'camp-tech', 'LAB-001', 'Marcus Vance', 'Senior Lab Administrator', 'dept-lab', 'marcus.v@tgi.edu', '+91 98450 77889', 'LAB_ADMIN', 'NFC-LAB-001', 'QR-LAB-001')
-ON CONFLICT (id) DO NOTHING;
-
 -- =============================================================================
 -- 4. BOOK CATALOG & COPIES INVENTORY
 -- =============================================================================
@@ -335,16 +317,6 @@ CREATE TABLE IF NOT EXISTS computers (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-INSERT INTO computers (id, campus_id, lab_name, machine_code, ip_address, specs, status)
-VALUES
-    ('comp-1', 'camp-main', 'Digital Library & Research Lab', 'DL-PC-01', '192.168.10.101', 'Intel i7, 32GB RAM, 1TB SSD', 'AVAILABLE'),
-    ('comp-2', 'camp-main', 'Digital Library & Research Lab', 'DL-PC-02', '192.168.10.102', 'Intel i7, 32GB RAM, 1TB SSD', 'AVAILABLE'),
-    ('comp-3', 'camp-main', 'Digital Library & Research Lab', 'DL-PC-03', '192.168.10.103', 'Intel i5, 16GB RAM, 512GB SSD', 'AVAILABLE'),
-    ('comp-4', 'camp-main', 'Digital Library & Research Lab', 'DL-PC-04', '192.168.10.104', 'Intel i5, 16GB RAM, 512GB SSD', 'MAINTENANCE'),
-    ('comp-5', 'camp-tech', 'High-Performance Computing Lab', 'HPC-PC-01', '10.20.1.50', 'AMD Ryzen 9, RTX 4080 GPU, 64GB RAM', 'AVAILABLE'),
-    ('comp-6', 'camp-tech', 'High-Performance Computing Lab', 'HPC-PC-02', '10.20.1.51', 'AMD Ryzen 9, RTX 4080 GPU, 64GB RAM', 'AVAILABLE')
-ON CONFLICT (id) DO NOTHING;
-
 CREATE TABLE IF NOT EXISTS computer_sessions (
     id TEXT PRIMARY KEY,
     computer_id TEXT REFERENCES computers(id) ON DELETE CASCADE,
@@ -383,15 +355,6 @@ CREATE TABLE IF NOT EXISTS workstation_assignments (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(machine_code)
 );
-
-INSERT INTO workstation_assignments (machine_code, student_id, student_name, class_name)
-VALUES
-    ('DL-PC-01', 'REG-2026-001', 'Alexander Pierce', 'CS-B 2026'),
-    ('DL-PC-02', 'REG-2026-002', 'Sophia Bennett', 'CS-B 2026'),
-    ('DL-PC-03', 'REG-2026-003', 'Liam Zhang', 'CS-B 2026'),
-    ('DL-PC-04', 'REG-2026-004', 'Emma Watson', 'CS-B 2026'),
-    ('HPC-PC-01', 'REG-2026-005', 'Noah Miller', 'CS-B 2026')
-ON CONFLICT (machine_code) DO NOTHING;
 
 -- =============================================================================
 -- 7. CLASS PERIOD ATTENDANCE TRACKER
@@ -438,13 +401,6 @@ CREATE TABLE IF NOT EXISTS event_halls (
     status VARCHAR(50) DEFAULT 'AVAILABLE',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
-INSERT INTO event_halls (id, campus_id, name, hall_code, capacity, location, amenities, status)
-VALUES
-    ('hall-1', 'camp-main', 'Dr. APJ Abdul Kalam Auditorium', 'AUD-MMC-01', 650, 'Central Block, 3rd Floor', '4K Projector, Surround Sound, Stage Lights, Live Streaming', 'AVAILABLE'),
-    ('hall-2', 'camp-main', 'Sir CV Raman Seminar Hall', 'SEM-MMC-02', 180, 'Academic Wing B', 'Dual Displays, Wireless Mics, Video Conferencing', 'AVAILABLE'),
-    ('hall-3', 'camp-tech', 'Turing Digital Innovation Amphitheatre', 'AMP-TEC-01', 400, 'Tech Tower, 1st Floor', 'Interactive Smart Board, Acoustic Paneling, Hybrid Setup', 'AVAILABLE')
-ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS events (
     id TEXT PRIMARY KEY,
@@ -505,16 +461,26 @@ CREATE TABLE IF NOT EXISTS notifications (
     campus_id VARCHAR(100) DEFAULT 'ALL',
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
-    type VARCHAR(50) NOT NULL,
+    type VARCHAR(50) DEFAULT 'INFO',
     link VARCHAR(255),
+    action_link TEXT,
     target_audience VARCHAR(100) DEFAULT 'ALL',
+    target_role VARCHAR(100) DEFAULT 'ALL',
     priority VARCHAR(50) DEFAULT 'NORMAL',
     unread BOOLEAN DEFAULT TRUE,
+    is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS campus_id VARCHAR(100) DEFAULT 'ALL';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'INFO';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS link VARCHAR(255);
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS action_link TEXT;
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS target_audience VARCHAR(100) DEFAULT 'ALL';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS target_role VARCHAR(100) DEFAULT 'ALL';
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS priority VARCHAR(50) DEFAULT 'NORMAL';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS unread BOOLEAN DEFAULT TRUE;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE;
 
 CREATE TABLE IF NOT EXISTS chat_channels (
     id TEXT PRIMARY KEY,
@@ -529,9 +495,9 @@ CREATE TABLE IF NOT EXISTS chat_channels (
 
 INSERT INTO chat_channels (id, name, description, role, avatar, last_message)
 VALUES
-    ('ch-admin', 'Executive Admin & Helpdesk', 'Direct desk with Super Admin & Campus Deans', 'ADMIN', 'shield', 'Your lab terminal request is approved.'),
-    ('ch-library', 'Chief Librarian Desk', 'Book renewals, shelf reservations & catalog queries', 'LIBRARIAN', 'book-open', 'The requested book is held at Counter 2.'),
-    ('ch-lab', 'Lab Hardware Support', 'Workstation issues, software licenses & GPU access', 'LAB_ADMIN', 'monitor', 'Terminal DL-PC-01 credentials reset.')
+    ('ch-admin', 'Executive Admin & Helpdesk', 'Direct desk with Super Admin & Campus Deans', 'ADMIN', 'shield', 'Channel active and ready for inquiries.'),
+    ('ch-library', 'Chief Librarian Desk', 'Book renewals, shelf reservations & catalog queries', 'LIBRARIAN', 'book-open', 'Channel active for circulation support.'),
+    ('ch-lab', 'Lab Hardware Support', 'Workstation issues, software licenses & GPU access', 'LAB_ADMIN', 'monitor', 'Channel active for workstation assistance.')
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS chat_messages (

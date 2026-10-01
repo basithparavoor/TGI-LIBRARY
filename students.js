@@ -444,7 +444,7 @@ function initBulkImport() {
     });
 
     document.getElementById('btn-download-template')?.addEventListener('click', () => {
-        const csvContent = "Register_No,Name,Location,Department,Class\nREG-2026-001,Alexander Pierce,Bangalore,Computer Science,CS-A 2026\nREG-2026-002,Sophia Bennett,Mumbai,Mechanical,ME-A 2026\n";
+        const csvContent = "Register_No,Name,Location,Department,Class\nSTU-001,John Doe,City,Computer Science,CS-A\nSTU-002,Jane Smith,City,Mechanical,ME-A\n";
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);

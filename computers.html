@@ -145,7 +145,7 @@
 
                                 <div class="input-group">
                                     <label>Student ID / NFC / QR *</label>
-                                    <input type="text" id="checkin-student-id" required placeholder="e.g. REG-2026-001 or tap NFC">
+                                    <input type="text" id="checkin-student-id" required placeholder="e.g. STU-1001 or tap NFC">
                                 </div>
 
                                 <div class="input-group">
@@ -244,7 +244,7 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="input-group">
                         <label>Machine Code *</label>
-                        <input type="text" id="add-pc-code" required placeholder="e.g. DL-PC-05">
+                        <input type="text" id="add-pc-code" required placeholder="e.g. PC-01">
                     </div>
                     <div class="input-group">
                         <label>Lab Room Name *</label>
@@ -255,14 +255,12 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="input-group">
                         <label>IP Address</label>
-                        <input type="text" id="add-pc-ip" placeholder="e.g. 192.168.10.105">
+                        <input type="text" id="add-pc-ip" placeholder="e.g. 192.168.1.101">
                     </div>
                     <div class="input-group">
                         <label>Campus Assignment</label>
                         <select id="add-pc-campus">
-                            <option value="camp-main">Main Metropolitan Campus</option>
-                            <option value="camp-tech">Tech & Engineering Campus</option>
-                            <option value="camp-north">North Sub-Campus</option>
+                            <!-- Injected dynamically -->
                         </select>
                     </div>
                 </div>

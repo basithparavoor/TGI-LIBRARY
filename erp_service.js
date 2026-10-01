@@ -34,13 +34,14 @@ const STORAGE_KEYS = {
 
 // Seed initial institutional data configuration if not present
 function seedInitialErpData() {
-    // One-time auto-purge for legacy demo records
-    if (!localStorage.getItem('erp_clean_v2_purged')) {
+    // One-time auto-purge for all legacy demo records
+    if (!localStorage.getItem('erp_clean_v3_purged')) {
         localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
         localStorage.removeItem(STORAGE_KEYS.CHAT_MESSAGES);
         localStorage.removeItem(STORAGE_KEYS.EVENT_HALLS);
         localStorage.removeItem(STORAGE_KEYS.COMPUTERS);
         localStorage.removeItem(STORAGE_KEYS.STAFF);
+        localStorage.removeItem(STORAGE_KEYS.STUDENTS);
         localStorage.removeItem(STORAGE_KEYS.COMPUTER_SESSIONS);
         localStorage.removeItem(STORAGE_KEYS.PERIOD_SESSIONS);
         localStorage.removeItem(STORAGE_KEYS.PERIOD_ATTENDANCE);
@@ -54,7 +55,13 @@ function seedInitialErpData() {
         localStorage.removeItem(STORAGE_KEYS.WORKSTATION_ASSIGNMENTS);
         localStorage.removeItem('erp_kiosk_loans');
         localStorage.removeItem('erp_event_attendees');
-        localStorage.setItem('erp_clean_v2_purged', 'true');
+        localStorage.removeItem('erp_acad_departments');
+        localStorage.removeItem('erp_acad_programs');
+        localStorage.removeItem('erp_acad_classes');
+        localStorage.removeItem('erp_storage_wings');
+        localStorage.removeItem('erp_storage_shelves');
+        localStorage.removeItem('erp_storage_racks');
+        localStorage.setItem('erp_clean_v3_purged', 'true');
     }
 
     if (!localStorage.getItem(STORAGE_KEYS.CAMPUSES)) {
@@ -174,13 +181,13 @@ export class ErpDataService {
     // --- INSTITUTION PROFILE & BRANDING ---
     getInstitutionProfile() {
         const defaultProfile = {
-            name: 'TGI INSTITUTION',
-            tagline: 'ERP & Facility Suite',
-            reg_code: 'TGI-UNIV-2026',
-            email: 'admin@tgi.edu',
-            phone: '+91 80 2345 6789',
-            website: 'https://tgi.edu',
-            address: 'Bangalore, Karnataka, India',
+            name: 'INSTITUTION NAME',
+            tagline: 'ERP & Library Management Suite',
+            reg_code: 'REG-2026-001',
+            email: 'admin@institution.edu',
+            phone: '+1 555-0100',
+            website: '',
+            address: 'Main Campus Headquarters',
             logo_url: '',
             favicon_url: '',
             established_year: '1998'

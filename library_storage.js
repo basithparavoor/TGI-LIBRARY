@@ -7,26 +7,10 @@ let wingsList = [];
 let shelvesList = [];
 let racksList = [];
 
-// Default Local Fallback Data
-const DEFAULT_WINGS = [
-    { id: 'wing-north', code: 'WING-N', name: 'North Reference Wing', floor: '1st Floor (East)', primary_focus: 'Computer Science & AI', max_capacity: 6000 },
-    { id: 'wing-central', code: 'WING-C', name: 'Central Stack Room', floor: 'Ground Floor', primary_focus: 'Core Engineering & Technology', max_capacity: 12000 },
-    { id: 'wing-south', code: 'WING-S', name: 'South Reading Annex', floor: '2nd Floor', primary_focus: 'Periodicals & Management', max_capacity: 4000 }
-];
-
-const DEFAULT_SHELVES = [
-    { id: 'shelf-1', code: 'SH-01', name: 'CS Software Engineering', wing_id: 'wing-north', wing_name: 'North Reference Wing', genre: 'Algorithms & Software Dev', tiers: 5, capacity: 600 },
-    { id: 'shelf-2', code: 'SH-02', name: 'AI & Machine Learning', wing_id: 'wing-north', wing_name: 'North Reference Wing', genre: 'Artificial Intelligence & Neural Nets', tiers: 5, capacity: 550 },
-    { id: 'shelf-3', code: 'SH-03', name: 'Mechanical Thermodynamics', wing_id: 'wing-central', wing_name: 'Central Stack Room', genre: 'Fluid Dynamics & Robotics', tiers: 6, capacity: 800 },
-    { id: 'shelf-4', code: 'SH-04', name: 'Business Leadership & Finance', wing_id: 'wing-south', wing_name: 'South Reading Annex', genre: 'MBA Case Studies & Finance', tiers: 4, capacity: 450 }
-];
-
-const DEFAULT_RACKS = [
-    { id: 'rack-1', code: 'RK-101', name: 'Tier 1 - Algorithms & Data Structs', shelf_id: 'shelf-1', shelf_name: 'CS Software Engineering', row_level: 'Row A (Top)', max_slots: 100, stored_books: 88 },
-    { id: 'rack-2', code: 'RK-102', name: 'Tier 2 - Systems & Compilers', shelf_id: 'shelf-1', shelf_name: 'CS Software Engineering', row_level: 'Row B (Middle)', max_slots: 100, stored_books: 65 },
-    { id: 'rack-3', code: 'RK-201', name: 'Tier 1 - Deep Learning & LLMs', shelf_id: 'shelf-2', shelf_name: 'AI & Machine Learning', row_level: 'Row A (Top)', max_slots: 90, stored_books: 82 },
-    { id: 'rack-4', code: 'RK-301', name: 'Tier 1 - Kinematics & CAD', shelf_id: 'shelf-3', shelf_name: 'Mechanical Thermodynamics', row_level: 'Row A (Top)', max_slots: 120, stored_books: 95 }
-];
+// Default Data (Clean Zero State)
+const DEFAULT_WINGS = [];
+const DEFAULT_SHELVES = [];
+const DEFAULT_RACKS = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
@@ -569,9 +553,9 @@ function setupEventListeners() {
     // Generate PDF Shelf Audit Report Modal
     document.getElementById('btn-storage-pdf-report')?.addEventListener('click', () => {
         const inst = erp.getInstitutionProfile();
-        document.getElementById('pdf-storage-inst-name').innerText = inst.name || 'TGI INSTITUTION';
+        document.getElementById('pdf-storage-inst-name').innerText = inst.name || 'INSTITUTION';
         document.getElementById('pdf-storage-inst-tagline').innerText = inst.tagline || 'Library Infrastructure & Storage Logistics';
-        document.getElementById('pdf-storage-inst-code').innerText = inst.reg_code || 'TGI-STR-2026';
+        document.getElementById('pdf-storage-inst-code').innerText = inst.reg_code || 'STR-AUDIT-01';
         document.getElementById('pdf-storage-report-date').innerText = new Date().toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
 
         const totalSlots = racksList.reduce((acc, r) => acc + (parseInt(r.max_slots) || 0), 0);

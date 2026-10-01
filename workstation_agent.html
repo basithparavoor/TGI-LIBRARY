@@ -97,8 +97,8 @@
                             </select>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="badge badge-brand" id="client-active-period-badge">Period 5: Excel Practical</span>
-                            <span class="badge badge-warning" id="client-policy-badge">EXCEL ONLY</span>
+                            <span class="badge badge-brand" id="client-active-period-badge">Workstation Ready</span>
+                            <span class="badge badge-warning" id="client-policy-badge">STATION ACTIVE</span>
                         </div>
                     </div>
 
@@ -106,12 +106,12 @@
                     <div id="client-locked-screen" class="win-lockscreen">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
-                                <div style="font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; opacity: 0.8;">TGI INSTITUTION • WINDOWS CLIENT AGENT</div>
-                                <div style="font-size: 1.5rem; font-weight: 900; margin-top: 0.2rem;" id="lockscreen-machine-code">DL-PC-01</div>
+                                <div style="font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; opacity: 0.8;">INSTITUTION • WORKSTATION AGENT</div>
+                                <div style="font-size: 1.5rem; font-weight: 900; margin-top: 0.2rem;" id="lockscreen-machine-code">PC-01</div>
                             </div>
                             <div style="text-align: right;">
-                                <div style="font-size: 2.25rem; font-weight: 900; font-family: var(--font-mono);" id="lockscreen-clock">13:30</div>
-                                <div style="font-size: 0.8rem; opacity: 0.85;" id="lockscreen-date">Classroom Session Locked</div>
+                                <div style="font-size: 2.25rem; font-weight: 900; font-family: var(--font-mono);" id="lockscreen-clock">--:--</div>
+                                <div style="font-size: 0.8rem; opacity: 0.85;" id="lockscreen-date">Workstation Locked</div>
                             </div>
                         </div>
 
@@ -120,14 +120,14 @@
                             <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--brand-gradient); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem; font-weight: 800; border: 2px solid white;">
                                 <i data-lucide="lock" style="width: 28px; height: 28px;"></i>
                             </div>
-                            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem;">Classroom Workstation Login</h3>
+                            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem;">Workstation Login</h3>
                             <p style="font-size: 0.8rem; opacity: 0.85; margin-bottom: 1.25rem;" id="lockscreen-session-desc">
-                                Only assigned student can unlock this PC during Period 5.
+                                Enter your student / member ID or tap your NFC smartcard.
                             </p>
 
                             <form id="form-workstation-login" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                                <input type="text" id="ws-username" placeholder="Student ID or NFC (e.g. REG-2026-001)" style="padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; outline: none; font-size: 0.95rem; font-weight: 600;" autofocus required>
-                                <input type="password" id="ws-password" placeholder="Password / PIN (e.g. 1234)" style="padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; outline: none; font-size: 0.95rem;" value="••••" required>
+                                <input type="text" id="ws-username" placeholder="Student ID or NFC (e.g. STU-1001)" style="padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; outline: none; font-size: 0.95rem; font-weight: 600;" autofocus required>
+                                <input type="password" id="ws-password" placeholder="Password / PIN" style="padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; outline: none; font-size: 0.95rem;" required>
                                 
                                 <button type="submit" class="btn btn-primary" style="padding: 0.75rem; font-size: 1rem; font-weight: 700; margin-top: 0.5rem; background: var(--brand-primary);">
                                     <i data-lucide="unlock" style="width: 16px;"></i> Unlock Workstation

@@ -336,7 +336,7 @@
                                 <div class="id-card-cr80" id="live-tag-mini-card" style="width: 280px; height: 175px; transform: scale(0.95); transform-origin: center;">
                                     <!-- Dynamic Front Render -->
                                     <div style="height: 42px; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; color: white;">
-                                        <div style="font-size: 0.65rem; font-weight: 900; letter-spacing: 0.05em;" id="mini-card-inst-name">TGI INSTITUTION</div>
+                                        <div style="font-size: 0.65rem; font-weight: 900; letter-spacing: 0.05em;" id="mini-card-inst-name">INSTITUTION</div>
                                         <div class="nfc-chip-badge" style="background: rgba(255,255,255,0.2); color: white; border: none;">
                                             <i data-lucide="nfc" style="width: 10px; height: 10px;"></i> NFC PASS
                                         </div>
@@ -440,7 +440,7 @@
                 <!-- TAB 3: CUSTOM TEMPLATE & GEOMETRY DESIGNER                    -->
                 <!-- ============================================================== -->
                 <div id="tab-template-designer" class="tab-panel-section" style="display: none;">
-                    <div class="grid-layout grid-2" style="grid-template-columns: 340px 1fr; gap: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 360px 1fr; gap: 1.5rem; align-items: flex-start;">
                         
                         <!-- Left: Template Controls & Geometry -->
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
@@ -475,14 +475,14 @@
                             <div class="designer-control-group">
                                 <div class="designer-control-title"><i data-lucide="palette" style="width: 14px;"></i> Colors & Background Theme</div>
                                 <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                                    <div class="grid-layout grid-2" style="gap: 0.5rem;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                                         <div>
                                             <label class="form-label" style="font-size: 0.7rem;">Primary Brand Color</label>
-                                            <input type="color" id="designer-color-primary" value="#3b82f6" class="form-control" style="height: 38px; padding: 2px;">
+                                            <input type="color" id="designer-color-primary" value="#3b82f6" class="form-control" style="height: 38px; padding: 2px; cursor: pointer;">
                                         </div>
                                         <div>
                                             <label class="form-label" style="font-size: 0.7rem;">Header / Accent</label>
-                                            <input type="color" id="designer-color-accent" value="#1e3a8a" class="form-control" style="height: 38px; padding: 2px;">
+                                            <input type="color" id="designer-color-accent" value="#1e3a8a" class="form-control" style="height: 38px; padding: 2px; cursor: pointer;">
                                         </div>
                                     </div>
                                     <div>
@@ -500,42 +500,42 @@
                             <!-- Visible Elements Toggle -->
                             <div class="designer-control-group">
                                 <div class="designer-control-title"><i data-lucide="layers" style="width: 14px;"></i> Visible Card Elements</div>
-                                <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.8rem;">
-                                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                         <input type="checkbox" id="designer-elem-logo" checked> Institution Logo & Title
                                     </label>
-                                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                         <input type="checkbox" id="designer-elem-photo" checked> Member Portrait Photo
                                     </label>
-                                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                         <input type="checkbox" id="designer-elem-barcode" checked> Dynamic Code128 Barcode
                                     </label>
-                                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                         <input type="checkbox" id="designer-elem-qrcode" checked> Verification QR Code
                                     </label>
-                                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                         <input type="checkbox" id="designer-elem-nfc" checked> NFC Contactless Chip Emblem
                                     </label>
-                                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                         <input type="checkbox" id="designer-elem-blood" checked> Blood Group & Emergency Contact
                                     </label>
-                                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                         <input type="checkbox" id="designer-elem-signature" checked> Authorized Dean Signature Block
                                     </label>
                                 </div>
                             </div>
 
                             <!-- Save Template Action -->
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn btn-primary" id="btn-save-custom-template" style="flex: 1; gap: 0.4rem;">
-                                    <i data-lucide="check" style="width: 14px;"></i> Save Custom Template
+                            <div>
+                                <button class="btn btn-primary" id="btn-save-custom-template" style="width: 100%; gap: 0.4rem; padding: 0.75rem;">
+                                    <i data-lucide="check" style="width: 16px;"></i> Save Custom Template
                                 </button>
                             </div>
                         </div>
 
                         <!-- Right: Interactive Live Canvas Preview -->
                         <div class="card card-glass" style="display: flex; flex-direction: column; gap: 1rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
                                 <div>
                                     <h3 style="font-size: 1.15rem; font-weight: 800; margin: 0;">Interactive Template Canvas</h3>
                                     <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Real-time 300 DPI print preview with dynamic binding.</p>
@@ -551,50 +551,50 @@
                             </div>
 
                             <!-- Viewport Canvas -->
-                            <div class="id-card-viewport">
+                            <div class="id-card-viewport" style="min-height: 380px;">
                                 <!-- FRONT VIEW -->
                                 <div class="id-card-cr80" id="designer-card-preview-front">
                                     <!-- Dynamic header banner -->
-                                    <div id="preview-header-banner" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;">
+                                    <div id="preview-header-banner" style="height: 42px; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 6px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
                                         <div style="display: flex; align-items: center; gap: 8px;">
-                                            <div id="preview-inst-logo" style="width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;">
-                                                <i data-lucide="building-2" style="width: 20px; height: 20px; color: white;"></i>
+                                            <div id="preview-inst-logo" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                                <i data-lucide="building-2" style="width: 18px; height: 18px; color: white;"></i>
                                             </div>
                                             <div>
-                                                <div style="font-size: 0.78rem; font-weight: 900; letter-spacing: 0.04em;" id="preview-inst-title">TGI INSTITUTION</div>
-                                                <div style="font-size: 0.52rem; opacity: 0.9; text-transform: uppercase;" id="preview-inst-tag">Institutional ID & Smart Pass</div>
+                                                <div style="font-size: 0.75rem; font-weight: 900; letter-spacing: 0.04em;" id="preview-inst-title">INSTITUTION NAME</div>
+                                                <div style="font-size: 0.5rem; opacity: 0.9; text-transform: uppercase;" id="preview-inst-tag">Institutional ID & Smart Pass</div>
                                             </div>
                                         </div>
-                                        <div class="nfc-chip-badge" id="preview-nfc-badge" style="background: rgba(255,255,255,0.25); color: white; border: none;">
-                                            <i data-lucide="nfc" style="width: 12px; height: 12px;"></i> NFC
+                                        <div class="nfc-chip-badge" id="preview-nfc-badge" style="background: rgba(255,255,255,0.25); color: white; border: none; font-size: 0.55rem; padding: 2px 6px;">
+                                            <i data-lucide="nfc" style="width: 11px; height: 11px;"></i> NFC
                                         </div>
                                     </div>
 
                                     <!-- Main body -->
-                                    <div style="padding: 12px 16px; display: flex; gap: 14px; align-items: center; flex: 1;">
-                                        <div id="preview-photo-container" style="width: 68px; height: 80px; background: #f1f5f9; border-radius: 8px; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                            <i data-lucide="user" style="width: 36px; height: 36px; color: #94a3b8;"></i>
+                                    <div style="padding: 10px 14px; display: flex; gap: 12px; align-items: center; flex: 1; min-height: 0;">
+                                        <div id="preview-photo-container" style="width: 56px; height: 66px; background: #f1f5f9; border-radius: 6px; border: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                            <i data-lucide="user" style="width: 32px; height: 32px; color: #94a3b8;"></i>
                                         </div>
                                         <div style="flex: 1; min-width: 0;">
-                                            <div style="font-weight: 900; font-size: 1rem; color: #0f172a; line-height: 1.2;" id="preview-member-name">Alexander Pierce</div>
-                                            <div style="font-size: 0.72rem; font-weight: 700; color: #3b82f6; margin-top: 2px;" id="preview-member-role">Undergraduate Scholar • CS</div>
+                                            <div style="font-weight: 900; font-size: 0.92rem; color: #0f172a; line-height: 1.2;" id="preview-member-name">Cardholder Name</div>
+                                            <div style="font-size: 0.7rem; font-weight: 700; color: #3b82f6; margin-top: 1px;" id="preview-member-role">Department • Role</div>
                                             
-                                            <div style="margin-top: 6px; font-size: 0.65rem; color: #475569; display: flex; flex-direction: column; gap: 2px;">
-                                                <div><strong>ID / Roll:</strong> <span style="font-family: var(--font-mono); font-weight: 700;" id="preview-member-id">REG-2026-001</span></div>
-                                                <div><strong>Dept / Cohort:</strong> <span id="preview-member-dept">Computer Science & Eng.</span></div>
-                                                <div id="preview-blood-contact"><strong>Blood:</strong> O+ | <strong>Emerg:</strong> +91 98765 43210</div>
+                                            <div style="margin-top: 4px; font-size: 0.62rem; color: #475569; display: flex; flex-direction: column; gap: 2px; line-height: 1.2;">
+                                                <div><strong>ID / Roll:</strong> <span style="font-family: var(--font-mono); font-weight: 700;" id="preview-member-id">MEM-0001</span></div>
+                                                <div><strong>Dept / Cohort:</strong> <span id="preview-member-dept">Academic Department</span></div>
+                                                <div id="preview-blood-contact"><strong>Blood:</strong> -- | <strong>Emerg:</strong> --</div>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Bottom Barcode & Signature Footer -->
-                                    <div style="padding: 6px 16px 10px 16px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #f1f5f9; background: #fafafa;">
-                                        <div id="preview-barcode-container">
-                                            <svg id="preview-barcode-svg" style="height: 32px; max-width: 180px;"></svg>
+                                    <div style="height: 44px; padding: 4px 14px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; background: #fafafa; flex-shrink: 0;">
+                                        <div id="preview-barcode-container" style="display: flex; align-items: center;">
+                                            <svg id="preview-barcode-svg" style="height: 24px; max-width: 150px; display: block;"></svg>
                                         </div>
-                                        <div style="text-align: right;" id="preview-sig-container">
-                                            <div style="font-family: 'Brush Script MT', cursive, sans-serif; font-size: 1.1rem; color: #1e3a8a; line-height: 1;">A. Pendelton</div>
-                                            <div style="font-size: 0.52rem; color: #94a3b8; font-weight: 800; text-transform: uppercase;">Dean / Authorized Sign</div>
+                                        <div style="text-align: right; line-height: 1;" id="preview-sig-container">
+                                            <div style="font-family: 'Brush Script MT', cursive, sans-serif; font-size: 0.95rem; color: #1e3a8a; line-height: 1;">Authorized Signatory</div>
+                                            <div style="font-size: 0.48rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-top: 1px;">Dean Office</div>
                                         </div>
                                     </div>
                                 </div>
@@ -606,16 +606,16 @@
                                             TERMS OF USAGE & GOVERNANCE
                                         </div>
                                         <p style="font-size: 0.58rem; color: #475569; line-height: 1.4; margin: 0;">
-                                            1. This official smart card is non-transferable and remains the property of TGI Institution.<br>
+                                            1. This official smart card is non-transferable and remains the property of the issuing institution.<br>
                                             2. Contactless NFC and barcode enable automated attendance, digital research workstation unlocking, and book borrowing.<br>
-                                            3. If found, please return immediately to Campus Dean Office or Library Desk.
+                                            3. If found, please return immediately to the Campus Dean Office or Library Desk.
                                         </p>
                                     </div>
 
                                     <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 8px;">
                                         <div style="font-size: 0.55rem; color: #64748b;">
-                                            <strong>Emergency Hotline:</strong> +91 80 2345 6789<br>
-                                            <strong>Portal:</strong> https://tgi.edu/verify
+                                            <strong>Emergency Hotline:</strong> General Helpdesk<br>
+                                            <strong>Verification Portal:</strong> Scan QR code
                                         </div>
                                         <div id="preview-back-qrcode" style="width: 44px; height: 44px;"></div>
                                     </div>

@@ -109,12 +109,42 @@ function startLiveClock() {
 }
 
 // --- COMMAND PALETTE LOGIC ---
-window.toggleCommandPalette = function() {
+function ensureCommandPalette() {
+    cmdOverlay = document.getElementById('command-overlay');
     if (!cmdOverlay) {
-        cmdOverlay = document.getElementById('command-overlay');
-        cmdInput = document.getElementById('global-search-input');
-        cmdResults = document.getElementById('command-results');
+        cmdOverlay = document.createElement('div');
+        cmdOverlay.id = 'command-overlay';
+        cmdOverlay.style.cssText = 'display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: flex-start; justify-content: center; padding-top: 10vh;';
+        
+        cmdOverlay.innerHTML = `
+            <div class="card card-glass animate-scale-in" style="width: 100%; max-width: 620px; padding: 0; overflow: hidden; display: flex; flex-direction: column; margin: 0 1rem; box-shadow: var(--shadow-xl); border: 1px solid var(--border-glass);">
+                <div style="display: flex; align-items: center; padding: 0.5rem 1.25rem; border-bottom: 1px solid var(--border-color); background: var(--bg-surface);">
+                    <i data-lucide="search" style="color: var(--brand-primary); width: 20px; height: 20px; margin-right: 0.75rem;"></i>
+                    <input type="text" id="global-search-input" placeholder="Search books, patrons, shelves, modules..." style="width: 100%; padding: 0.85rem 0; border: none; font-size: 1.05rem; background: transparent; outline: none; color: var(--text-primary); box-shadow: none;">
+                    <kbd style="background: var(--bg-muted); color: var(--text-muted); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; border: 1px solid var(--border-color); font-weight: 600;">ESC</kbd>
+                </div>
+                
+                <div id="command-results" style="max-height: 440px; overflow-y: auto; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        `;
+        document.body.appendChild(cmdOverlay);
+
+        cmdOverlay.addEventListener('click', (e) => {
+            if (e.target === cmdOverlay) window.toggleCommandPalette();
+        });
+
+        if (window.lucide) lucide.createIcons();
     }
+
+    cmdInput = document.getElementById('global-search-input');
+    cmdResults = document.getElementById('command-results');
+    setupPaletteSearch();
+}
+
+window.toggleCommandPalette = function() {
+    ensureCommandPalette();
     if (!cmdOverlay) return;
 
     if (cmdOverlay.style.display === 'none' || !cmdOverlay.style.display) {
@@ -134,27 +164,27 @@ window.toggleCommandPalette = function() {
 function renderDefaultPaletteItems() {
     if (!cmdResults) return;
     cmdResults.innerHTML = `
-        <div style="padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Institutional Modules</div>
+        <div style="padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Institutional Modules & Shortcuts</div>
         <div class="cmd-item" onclick="window.location.href='index.html'"><i data-lucide="layout-dashboard"></i> <div><div style="font-weight: 600;">ERP Dashboard</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Multi-campus institutional overview & live metrics</div></div></div>
         <div class="cmd-item" onclick="window.location.href='circulation.html'"><i data-lucide="repeat"></i> <div><div style="font-weight: 600;">Circulation Desk</div><div style="font-size: 0.75rem; color: var(--text-secondary);">NFC, QR, Barcode check-out & check-in</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='nfc_id_cards.html'"><i data-lucide="contact-2"></i> <div><div style="font-weight: 600;">NFC Smart Card & ID Card Studio</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Program NFC tags, barcode sync & 300 DPI vector PDF printing</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='books.html'"><i data-lucide="book-open"></i> <div><div style="font-weight: 600;">Book Catalogue & Copies</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Search, add books & print barcode stickers</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='students.html'"><i data-lucide="users"></i> <div><div style="font-weight: 600;">Student Members</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Patron directory, borrow limits & NFC sync</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='academic_structure.html'"><i data-lucide="network"></i> <div><div style="font-weight: 600;">Academic Structure Management</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Departments, degree programs, class cohorts & audit PDF</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='library_storage.html'"><i data-lucide="archive"></i> <div><div style="font-weight: 600;">Library Physical Storage</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Wings, stack rooms, shelves, rack compartments & live matrix</div></div></div>
         <div class="cmd-item" onclick="window.location.href='computers.html'"><i data-lucide="monitor"></i> <div><div style="font-weight: 600;">Computer Lab Workstation Tracker</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Machine codes, user time analytics (day/week/month)</div></div></div>
-        <div class="cmd-item" onclick="window.location.href='attendance.html'"><i data-lucide="calendar-check"></i> <div><div style="font-weight: 600;">Class Period & Lab Attendance</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Teacher roll call & smart NFC period check-in</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='attendance.html'"><i data-lucide="calendar-check"></i> <div><div style="font-weight: 600;">Class Period & Lab Attendance</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Teacher roll call, smart NFC check-in & report downloads</div></div></div>
         <div class="cmd-item" onclick="window.location.href='events.html'"><i data-lucide="ticket"></i> <div><div style="font-weight: 600;">Event Halls & Auditorium Bookings</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Schedule events, conductor tickets & attendee scanner</div></div></div>
-        <div class="cmd-item" onclick="window.location.href='workstation_agent.html'"><i data-lucide="lock"></i> <div><div style="font-weight: 600;">PC Classroom Locker & Focus Kiosk</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Single-student login verification & allowed app whitelist</div></div></div>
-        <div class="cmd-item" onclick="window.location.href='hallpass.html'"><i data-lucide="footprints"></i> <div><div style="font-weight: 600;">Entrance Verification & Hall Passes</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Track student arrival times & prevent hallway wandering</div></div></div>
-        <div class="cmd-item" onclick="window.location.href='audio_station.html'"><i data-lucide="volume-2"></i> <div><div style="font-weight: 600;">Read-Aloud & Accessibility Audio Station</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Natural speech synthesizer & karaoke sentence highlighter</div></div></div>
-        <div class="cmd-item" onclick="window.location.href='academic_structure.html'"><i data-lucide="network"></i> <div><div style="font-weight: 600;">Academic Structure Management</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Faculties, academic departments, degree programs & class sections</div></div></div>
-        <div class="cmd-item" onclick="window.location.href='library_storage.html'"><i data-lucide="archive"></i> <div><div style="font-weight: 600;">Library Storage & Locations</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Storage wings, stack rooms, shelves, rack compartments & live matrix</div></div></div>
         <div class="cmd-item" onclick="window.location.href='campus_portal.html'"><i data-lucide="shield-check"></i> <div><div style="font-weight: 600;">Campus Heads & Dean Portal</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Facility requests, approvals & executive oversight</div></div></div>
-        <div class="cmd-item" onclick="window.location.href='reports.html'"><i data-lucide="bar-chart-3"></i> <div><div style="font-weight: 600;">Dynamic Report Engine</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Cross-campus analytics, computer logs, attendance & PDF export</div></div></div>
-        <div class="cmd-item" onclick="window.location.href='access_control.html'"><i data-lucide="lock"></i> <div><div style="font-weight: 600;">Access Control & RBAC Matrix</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Manage granular role permissions and data governance</div></div></div>
+        <div class="cmd-item" onclick="window.location.href='settings.html'"><i data-lucide="settings"></i> <div><div style="font-weight: 600;">Institution Profile & Settings</div><div style="font-size: 0.75rem; color: var(--text-secondary);">Campus logos, branding, loan rules & fine rates</div></div></div>
     `;
     if (window.lucide) lucide.createIcons();
 }
 
 document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
+        e.stopPropagation();
         window.toggleCommandPalette();
     }
     if (e.key === 'Escape' && cmdOverlay && cmdOverlay.style.display === 'flex') {
@@ -402,7 +432,7 @@ window.printLibraryCard = function(name, idNumber, roleOrClass = 'Member', nfcTa
                             <div style="width: 24px; height: 24px; border-radius: 6px; background: #3b82f6; display: flex; align-items: center; justify-content: center;">
                                 <i data-lucide="building-2" style="width: 14px; height: 14px; color: white;"></i>
                             </div>
-                            <span style="font-weight: 800; font-size: 0.85rem; letter-spacing: 0.5px;">TGI INSTITUTION</span>
+                            <span style="font-weight: 800; font-size: 0.85rem; letter-spacing: 0.5px;">${erp?.getInstitutionProfile?.()?.name || 'INSTITUTION'}</span>
                         </div>
                         <div style="display: flex; gap: 4px; align-items: center;">
                             <span style="font-size: 0.6rem; font-weight: 700; background: rgba(59,130,246,0.3); color: #93c5fd; padding: 2px 6px; border-radius: 4px;">NFC SMART</span>
@@ -1082,8 +1112,8 @@ function initMessengerWidget() {
         if (!text) return;
 
         // Current user info fallback
-        const userName = localStorage.getItem('user_name') || 'Student Member';
-        const userId = localStorage.getItem('user_id') || 'REG-2026-001';
+        const userName = localStorage.getItem('user_name') || 'Member';
+        const userId = localStorage.getItem('user_id') || 'MEM-001';
 
         erp.sendChatMessage(activeChatChannelId, userId, userName, 'STUDENT', text, true);
         chatInput.value = '';
@@ -1216,7 +1246,7 @@ function simulateAdminResponse(userPrompt) {
         reply = "Auditorium booking schedule reviewed. Your request is queued for Dean authorization in the Campus Portal.";
     }
 
-    erp.sendChatMessage(activeChatChannelId, 'ADM-001', 'Dean Arthur Pendelton', 'ADMIN', reply, false);
+    erp.sendChatMessage(activeChatChannelId, 'ADM-001', 'Helpdesk Administrator', 'ADMIN', reply, false);
     playSynthSound('success');
     renderChatMessages();
 }

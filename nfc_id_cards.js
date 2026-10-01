@@ -274,7 +274,7 @@ function matchMemberByNfc(uid) {
 
 function updateMiniCard(member) {
     const inst = erp.getInstitutionProfile();
-    document.getElementById('mini-card-inst-name').innerText = inst.name || 'TGI INSTITUTION';
+    document.getElementById('mini-card-inst-name').innerText = inst.name || 'INSTITUTION';
     document.getElementById('mini-card-name').innerText = member.name;
     document.getElementById('mini-card-role').innerText = member.role_label;
     document.getElementById('mini-card-id').innerText = `ID: ${member.member_id}`;
@@ -395,7 +395,7 @@ function renderBatchCards() {
                     <div style="display: flex; align-items: center; gap: 8px;">
                         ${inst.logo_url ? `<img src="${inst.logo_url}" style="width: 24px; height: 24px; object-fit: contain;">` : `<i data-lucide="building-2" style="width: 20px; height: 20px;"></i>`}
                         <div>
-                            <div style="font-size: 0.75rem; font-weight: 900; letter-spacing: 0.04em;">${inst.name || 'TGI INSTITUTION'}</div>
+                            <div style="font-size: 0.75rem; font-weight: 900; letter-spacing: 0.04em;">${inst.name || 'INSTITUTION'}</div>
                             <div style="font-size: 0.5rem; opacity: 0.9; text-transform: uppercase;">Smart Campus Pass</div>
                         </div>
                     </div>
@@ -416,7 +416,7 @@ function renderBatchCards() {
                         <div style="margin-top: 4px; font-size: 0.62rem; color: #475569; display: flex; flex-direction: column; gap: 1px;">
                             <div><strong>ID:</strong> <span style="font-family: var(--font-mono); font-weight: 700;">${m.member_id}</span></div>
                             <div><strong>Dept:</strong> ${m.dept_class}</div>
-                            <div><strong>Blood:</strong> ${m.blood_group} | <strong>Valid:</strong> 2026-2027</div>
+                            <div><strong>Blood:</strong> ${m.blood_group || '--'} | <strong>Status:</strong> Active</div>
                         </div>
                     </div>
                 </div>
@@ -425,7 +425,7 @@ function renderBatchCards() {
                 <div style="padding: 6px 14px 8px 14px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #f1f5f9; background: #fafafa;">
                     <svg id="${barcodeId}" style="height: 28px; max-width: 160px;"></svg>
                     <div style="text-align: right;">
-                        <div style="font-family: 'Brush Script MT', cursive; font-size: 0.95rem; color: #1e3a8a;">A. Pendelton</div>
+                        <div style="font-family: 'Brush Script MT', cursive; font-size: 0.95rem; color: #1e3a8a;">Authorized</div>
                         <div style="font-size: 0.5rem; color: #94a3b8; font-weight: 800; text-transform: uppercase;">Dean Office</div>
                     </div>
                 </div>
@@ -579,7 +579,7 @@ function updateLiveDesignerPreview() {
     }
 
     const title = document.getElementById('preview-inst-title');
-    if (title) title.innerText = inst.name || 'TGI INSTITUTION';
+    if (title) title.innerText = inst.name || 'INSTITUTION NAME';
 
     const logoContainer = document.getElementById('preview-inst-logo');
     if (logoContainer) {
@@ -614,10 +614,10 @@ function updateLiveDesignerPreview() {
         barcodeContainer.style.display = currentTemplateConfig.show_barcode ? 'block' : 'none';
         if (currentTemplateConfig.show_barcode && window.JsBarcode) {
             try {
-                JsBarcode("#preview-barcode-svg", "REG-2026-001", {
+                JsBarcode("#preview-barcode-svg", "MEM-0001", {
                     format: "CODE128",
-                    width: 1.2,
-                    height: 28,
+                    width: 1.1,
+                    height: 22,
                     displayValue: false,
                     margin: 0
                 });
@@ -633,7 +633,7 @@ function renderBackQrCode() {
     if (qrContainer && window.QRCode) {
         qrContainer.innerHTML = '';
         new QRCode(qrContainer, {
-            text: "https://tgi.edu/verify?id=REG-2026-001",
+            text: `${window.location.origin}/verify?id=MEM-0001`,
             width: 44,
             height: 44,
             colorDark: "#1e293b",

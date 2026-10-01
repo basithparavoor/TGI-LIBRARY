@@ -582,7 +582,7 @@ function initBulkImportBooks() {
     });
 
     document.getElementById('btn-download-template-books')?.addEventListener('click', () => {
-        const csvContent = "Title,Author,ISBN,Price,Edition,Category,Publisher,Copies\nIntroduction to Algorithms,Thomas H. Cormen,9780262033848,4500,4th Ed,Computer Science,MIT Press,3\nClean Code,Robert C. Martin,9780132350884,2800,1st Ed,Software Engineering,Prentice Hall,2\n";
+        const csvContent = "Title,Author,ISBN,Price,Edition,Category,Publisher,Copies\nSample Book Title 1,Author Name,9780000000001,500,1st Ed,Science,Academic Press,3\nSample Book Title 2,Author Name,9780000000002,750,2nd Ed,General,University Press,2\n";
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);

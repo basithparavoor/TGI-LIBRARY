@@ -7,27 +7,10 @@ let departmentsList = [];
 let programsList = [];
 let classesList = [];
 
-// Default Local Fallback Data
-const DEFAULT_DEPTS = [
-    { id: 'dept-cs', code: 'CS', name: 'Computer Science & Engineering', hod_name: 'Dr. Robert Oppenheim', email: 'hod.cs@tgi.edu', intake_capacity: 180 },
-    { id: 'dept-me', code: 'ME', name: 'Mechanical & Automation Engineering', hod_name: 'Prof. Evelyn Reed', email: 'hod.me@tgi.edu', intake_capacity: 120 },
-    { id: 'dept-ec', code: 'ECE', name: 'Electronics & Communication', hod_name: 'Dr. Sarah Connor', email: 'hod.ece@tgi.edu', intake_capacity: 120 },
-    { id: 'dept-mgt', code: 'MGMT', name: 'School of Management Studies', hod_name: 'Prof. Dev Patel', email: 'hod.mgmt@tgi.edu', intake_capacity: 90 }
-];
-
-const DEFAULT_PROGRAMS = [
-    { id: 'prog-1', code: 'BTECH-CSE', name: 'B.Tech Computer Science & Engineering', department_id: 'dept-cs', department_name: 'Computer Science & Engineering', degree_level: 'Undergraduate (UG)', duration_years: 4, credits: 160 },
-    { id: 'prog-2', code: 'MTECH-AI', name: 'M.Tech Artificial Intelligence & Data Science', department_id: 'dept-cs', department_name: 'Computer Science & Engineering', degree_level: 'Postgraduate (PG)', duration_years: 2, credits: 80 },
-    { id: 'prog-3', code: 'BTECH-ME', name: 'B.Tech Mechanical & Robotics', department_id: 'dept-me', department_name: 'Mechanical & Automation Engineering', degree_level: 'Undergraduate (UG)', duration_years: 4, credits: 160 },
-    { id: 'prog-4', code: 'MBA-TECH', name: 'Master of Business Administration (Tech Management)', department_id: 'dept-mgt', department_name: 'School of Management Studies', degree_level: 'Postgraduate (PG)', duration_years: 2, credits: 96 }
-];
-
-const DEFAULT_CLASSES = [
-    { id: 'cls-1', code: 'CS-A', name: 'CS-A 2026 Batch', department_id: 'dept-cs', department_name: 'Computer Science & Engineering', semester: 'Semester 4', mentor_name: 'Prof. Ananya Roy', room_no: 'Room 204 (CS Wing)', capacity: 60, enrolled_count: 58 },
-    { id: 'cls-2', code: 'CS-B', name: 'CS-B 2026 Batch', department_id: 'dept-cs', department_name: 'Computer Science & Engineering', semester: 'Semester 4', mentor_name: 'Dr. Robert Oppenheim', room_no: 'Room 205 (CS Wing)', capacity: 60, enrolled_count: 56 },
-    { id: 'cls-3', code: 'ME-A', name: 'ME-A 2026 Batch', department_id: 'dept-me', department_name: 'Mechanical & Automation Engineering', semester: 'Semester 4', mentor_name: 'Prof. Evelyn Reed', room_no: 'Workshop Hall 3', capacity: 60, enrolled_count: 52 },
-    { id: 'cls-4', code: 'MBA-1', name: 'MBA Year 1', department_id: 'dept-mgt', department_name: 'School of Management Studies', semester: 'Semester 2', mentor_name: 'Prof. Dev Patel', room_no: 'Executive Room 101', capacity: 45, enrolled_count: 42 }
-];
+// Default Data (Clean Zero State)
+const DEFAULT_DEPTS = [];
+const DEFAULT_PROGRAMS = [];
+const DEFAULT_CLASSES = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
@@ -552,9 +535,9 @@ function setupEventListeners() {
     // Generate PDF Audit Report Modal
     document.getElementById('btn-academic-pdf-report')?.addEventListener('click', () => {
         const inst = erp.getInstitutionProfile();
-        document.getElementById('pdf-inst-name').innerText = inst.name || 'TGI INSTITUTION';
+        document.getElementById('pdf-inst-name').innerText = inst.name || 'INSTITUTION';
         document.getElementById('pdf-inst-tagline').innerText = inst.tagline || 'Office of Academic Affairs & Accreditation';
-        document.getElementById('pdf-inst-code').innerText = inst.reg_code || 'TGI-ACAD-2026';
+        document.getElementById('pdf-inst-code').innerText = inst.reg_code || 'ACAD-AUDIT-01';
         document.getElementById('pdf-report-date').innerText = new Date().toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
 
         const totalCapacity = departmentsList.reduce((acc, d) => acc + (parseInt(d.intake_capacity) || 0), 0);

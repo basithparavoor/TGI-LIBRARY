@@ -3,9 +3,9 @@ import { showToast, playAudioChime } from './ui.js';
 
 const PASSAGES = {
     'excerpt-1': {
-        title: 'Clean Code: Functions & Craftsmanship',
-        subtitle: 'Author: Robert C. Martin • Section 3.2',
-        text: 'The first rule of functions is that they should be small. The second rule of functions is that they should be smaller than that. Functions should do one thing. They should do it well. They should do it only. Master programmers think of systems as stories to be told rather than programs to be written.'
+        title: 'Principles of Scientific Inquiry & Logic',
+        subtitle: 'Academic Philosophy • Introductory Series',
+        text: 'Scientific inquiry begins with keen observation and curiosity about the natural world. Through systematic experimentation and careful reasoning, we formulate hypotheses to test our understanding. Knowledge expands progressively as ideas are challenged, refined, and verified by reproducible evidence.'
     },
     'excerpt-2': {
         title: 'Physics of the Universe: Gravity & Relativity',
