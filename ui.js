@@ -1136,6 +1136,10 @@ window.openBroadcastNotificationModal = function() {
                 timestamp: new Date().toISOString()
             });
 
+            if (window.AndroidBridge && typeof window.AndroidBridge.postNativeNotification === 'function') {
+                window.AndroidBridge.postNativeNotification(title, message, type, '');
+            }
+
             playSynthSound('success');
             window.app.toast(`Broadcast notification "${title}" sent!`, 'success', 'Broadcast Live');
             modal.style.display = 'none';

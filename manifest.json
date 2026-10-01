@@ -1,7 +1,7 @@
 {
-  "name": "Premium Institute Library Management System",
+  "name": "TGI LIBRARY",
   "short_name": "TGI LIBRARY",
-  "description": "Enterprise-grade library circulation and catalog management.",
+  "description": "Enterprise-grade library circulation and campus management system.",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#f8fafc",
