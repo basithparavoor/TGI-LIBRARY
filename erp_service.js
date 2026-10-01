@@ -200,13 +200,53 @@ export class ErpDataService {
         const updated = { ...current, ...profile };
         localStorage.setItem(STORAGE_KEYS.INSTITUTION_PROFILE, JSON.stringify(updated));
         window.dispatchEvent(new CustomEvent('institutionProfileUpdated', { detail: updated }));
+
+        // Async sync to Supabase remote database
+        try {
+            supabase.from('institution_profile').upsert({
+                id: 'main_institution_profile',
+                name: updated.name,
+                tagline: updated.tagline,
+                reg_code: updated.reg_code,
+                email: updated.email,
+                phone: updated.phone,
+                website: updated.website,
+                address: updated.address,
+                logo_url: updated.logo_url,
+                favicon_url: updated.favicon_url,
+                established_year: updated.established_year,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'id' }).then(({ error }) => {
+                if (error) console.warn("Supabase institution profile sync warning:", error);
+            }).catch(e => console.warn("Supabase profile sync err:", e));
+        } catch (e) {}
+
         return updated;
+    }
+
+    async syncInstitutionProfileFromSupabase() {
+        try {
+            const { data, error } = await supabase.from('institution_profile').select('*').limit(1).maybeSingle();
+            if (data && !error) {
+                const current = this.getInstitutionProfile();
+                const merged = { ...current, ...data };
+                localStorage.setItem(STORAGE_KEYS.INSTITUTION_PROFILE, JSON.stringify(merged));
+                window.dispatchEvent(new CustomEvent('institutionProfileUpdated', { detail: merged }));
+                return merged;
+            }
+        } catch (e) {
+            console.warn("Could not sync institution profile from Supabase:", e);
+        }
+        return this.getInstitutionProfile();
     }
 
     resetInstitutionProfile() {
         localStorage.removeItem(STORAGE_KEYS.INSTITUTION_PROFILE);
         const def = this.getInstitutionProfile();
         window.dispatchEvent(new CustomEvent('institutionProfileUpdated', { detail: def }));
+        try {
+            supabase.from('institution_profile').delete().eq('id', 'main_institution_profile').then(() => {}).catch(() => {});
+        } catch (e) {}
         return def;
     }
 

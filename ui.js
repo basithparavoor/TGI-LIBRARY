@@ -499,6 +499,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
     startLiveClock();
     applyInstitutionBranding();
+    
+    // Background sync institution branding from remote Supabase
+    if (typeof erp?.syncInstitutionProfileFromSupabase === 'function') {
+        erp.syncInstitutionProfileFromSupabase().then(() => {
+            applyInstitutionBranding();
+        }).catch(() => {});
+    }
 
     // 1. Mobile Overlay
     let mobileOverlay = document.getElementById('mobile-sidebar-overlay');
@@ -958,26 +965,25 @@ export function applyInstitutionBranding() {
     }
 
     // 3. Admin Sidebar Branding
-    const sidebar = document.getElementById('sidebar-container');
-    if (sidebar) {
-        const brandTitle = sidebar.querySelector('.brand h2');
-        const brandTagline = sidebar.querySelector('.brand p');
-        const brandIcon = sidebar.querySelector('.brand > div:first-child');
-        if (brandTitle && profile.name) brandTitle.innerText = profile.name;
-        if (brandTagline && profile.tagline) brandTagline.innerText = profile.tagline;
-        if (brandIcon) {
-            if (profile.logo_url) {
-                brandIcon.style.background = 'transparent';
-                brandIcon.style.boxShadow = 'none';
-                brandIcon.style.border = 'none';
-                brandIcon.style.padding = '0';
-                brandIcon.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; background: transparent; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));">`;
-            } else {
-                brandIcon.style.background = 'transparent';
-                brandIcon.style.boxShadow = 'none';
-                brandIcon.innerHTML = `<i data-lucide="building-2" style="width: 24px; height: 24px; color: var(--brand-primary);"></i>`;
-                if (window.lucide) lucide.createIcons();
-            }
+    const brandTitle = document.getElementById('sidebar-inst-brand-name') || document.querySelector('.brand h2');
+    const brandTagline = document.getElementById('sidebar-inst-brand-tagline') || document.querySelector('.brand p');
+    const brandIcon = document.getElementById('sidebar-brand-icon') || document.querySelector('.brand #sidebar-brand-icon');
+
+    if (brandTitle && profile.name) brandTitle.innerText = profile.name;
+    if (brandTagline && profile.tagline) brandTagline.innerText = profile.tagline;
+
+    if (brandIcon) {
+        if (profile.logo_url) {
+            brandIcon.style.background = 'transparent';
+            brandIcon.style.boxShadow = 'none';
+            brandIcon.style.border = 'none';
+            brandIcon.style.padding = '0';
+            brandIcon.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="max-width: 40px; max-height: 40px; width: auto; height: auto; object-fit: contain; background: transparent; display: block;">`;
+        } else {
+            brandIcon.style.background = 'transparent';
+            brandIcon.style.boxShadow = 'none';
+            brandIcon.innerHTML = `<i data-lucide="building-2" style="width: 24px; height: 24px; color: var(--brand-primary);"></i>`;
+            if (window.lucide) lucide.createIcons();
         }
     }
 
@@ -988,7 +994,7 @@ export function applyInstitutionBranding() {
     if (loginLogo && profile.logo_url) {
         loginLogo.style.background = 'transparent';
         loginLogo.style.boxShadow = 'none';
-        loginLogo.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">`;
+        loginLogo.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="max-width: 44px; max-height: 44px; width: auto; height: auto; object-fit: contain; display: block;">`;
     }
     if (loginTitle && profile.name) loginTitle.innerText = profile.name;
     if (loginTagline && profile.tagline) loginTagline.innerText = profile.tagline;
@@ -1000,21 +1006,23 @@ export function applyInstitutionBranding() {
     if (kioskLogo && profile.logo_url) {
         kioskLogo.style.background = 'transparent';
         kioskLogo.style.boxShadow = 'none';
-        kioskLogo.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">`;
+        kioskLogo.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="max-width: 44px; max-height: 44px; width: auto; height: auto; object-fit: contain; display: block;">`;
     }
     if (kioskTitle && profile.name) kioskTitle.innerText = `${profile.name} KIOSK`;
     if (kioskTagline && profile.tagline) kioskTagline.innerText = profile.tagline;
 
     // 6. Student Portal Branding
     const portalHeader = document.getElementById('portal-brand-header');
+    const portalTagline = document.getElementById('portal-brand-tagline');
     const portalLogo = document.getElementById('portal-brand-logo');
     const scInstName = document.getElementById('sc-inst-name');
     if (portalHeader && profile.name) portalHeader.innerText = `${profile.name} PORTAL`;
+    if (portalTagline && profile.tagline) portalTagline.innerText = profile.tagline;
     if (scInstName && profile.name) scInstName.innerText = profile.name.toUpperCase();
     if (portalLogo && profile.logo_url) {
         portalLogo.style.background = 'transparent';
         portalLogo.style.boxShadow = 'none';
-        portalLogo.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">`;
+        portalLogo.innerHTML = `<img src="${profile.logo_url}" alt="Logo" style="max-width: 36px; max-height: 36px; width: auto; height: auto; object-fit: contain; display: block;">`;
     }
 
     // 7. Lockscreen / Agent Branding
@@ -1024,7 +1032,7 @@ export function applyInstitutionBranding() {
     }
 
     // 8. Universal Institution Labels
-    document.querySelectorAll('.inst-name-display, #inst-name-display').forEach(el => {
+    document.querySelectorAll('.inst-name-display, #inst-name-display, #inst-brand-name').forEach(el => {
         if (profile.name) el.innerText = profile.name;
     });
 }

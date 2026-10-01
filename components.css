@@ -1252,10 +1252,10 @@ tbody tr:hover {
         right: -10px;
     }
 
-    /* Enhanced Card Grid for Mobile */
-    .grid-layout, .responsive-grid-2, .responsive-grid-equal {
+    /* Universal Responsive Grid & Card Formats */
+    .grid-layout, .responsive-grid-2, .responsive-grid-equal, .responsive-grid-3, .form-grid-2, .form-grid-3 {
         grid-template-columns: 1fr !important;
-        gap: 1rem !important;
+        gap: 0.85rem !important;
     }
 
     .card {
@@ -1268,7 +1268,36 @@ tbody tr:hover {
     }
 
     .main-content {
-        padding: 1rem 0.75rem 5.5rem 0.75rem;
+        padding: 0.85rem 0.65rem 5.5rem 0.65rem;
+    }
+
+    /* Universal Table Scroll Wrapping */
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: var(--radius-sm);
+    }
+
+    /* Universal Dialog / Modal Mobile Adaptation */
+    .app-dialog, .modal {
+        max-width: 94vw !important;
+        width: 94vw !important;
+        max-height: 88vh !important;
+        overflow-y: auto !important;
+        padding: 1.25rem 1rem !important;
+        margin: auto !important;
+    }
+
+    /* Responsive Button & Action Bars */
+    .action-bar, .filter-bar, .page-header-actions {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+    }
+
+    .action-bar > *, .filter-bar > * {
+        flex: 1 1 auto;
     }
 }
 
@@ -1278,5 +1307,11 @@ tbody tr:hover {
     }
     .topbar-campus-chip {
         max-width: 120px;
+    }
+    .topbar-campus-chip select {
+        max-width: 90px !important;
+    }
+    .app-topbar {
+        padding: 0 0.45rem;
     }
 }
