@@ -799,12 +799,38 @@ function initNotificationDrawer() {
     });
 
     // Global event listener for incoming notifications
-    window.addEventListener('notificationReceived', () => {
+    window.addEventListener('notificationReceived', (e) => {
         updateNotificationBadges();
-        if (notifDrawer.classList.contains('active')) renderNotificationItems();
+        if (notifDrawer?.classList.contains('active')) renderNotificationItems();
     });
 
-    // Background sync notifications from Supabase
+    window.addEventListener('notificationsUpdated', () => {
+        updateNotificationBadges();
+        if (notifDrawer?.classList.contains('active')) renderNotificationItems();
+    });
+
+    // Real-time Supabase push stream listener
+    try {
+        if (typeof supabase !== 'undefined' && supabase.channel) {
+            supabase.channel('public:notifications:realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, async (payload) => {
+                    await erp.syncNotificationsFromSupabase();
+                    if (payload.eventType === 'INSERT') {
+                        const n = payload.new;
+                        playSynthSound('success');
+                        window.app.toast(n.title || 'New Announcement', 'info', 'Push Notification');
+                        if (window.AndroidBridge && typeof window.AndroidBridge.postNativeNotification === 'function') {
+                            window.AndroidBridge.postNativeNotification(n.title, n.message, n.type || 'BROADCAST', n.action_link || '');
+                        }
+                    }
+                })
+                .subscribe();
+        }
+    } catch (e) {
+        console.warn("Realtime listener error:", e);
+    }
+
+    // Background sync notifications from Supabase (fast 6s sync for seamless instant updates)
     if (typeof erp?.syncNotificationsFromSupabase === 'function') {
         erp.syncNotificationsFromSupabase().then(() => {
             updateNotificationBadges();
@@ -813,7 +839,7 @@ function initNotificationDrawer() {
 
         setInterval(() => {
             erp.syncNotificationsFromSupabase().catch(() => {});
-        }, 30000);
+        }, 6000);
     }
 
     updateNotificationBadges();
@@ -927,6 +953,13 @@ function updateNotificationBadges() {
     }
     if (statusText) {
         statusText.innerText = `${unreadCount} unread alert${unreadCount === 1 ? '' : 's'}`;
+    }
+
+    // Outside phone launcher icon badge sync
+    if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.updateBadgeCount === 'function') {
+        try {
+            window.AndroidBridge.updateBadgeCount(unreadCount);
+        } catch (e) {}
     }
 }
 

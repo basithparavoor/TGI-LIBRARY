@@ -1,14 +1,22 @@
-// access_control.js - Role-Based Access Control (RBAC) Governance Matrix
+// access_control.js - Role-Based Access Control (RBAC) Governance Matrix & Admin Delegations
 import { erp } from './erp_service.js';
-import { showToast, playAudioChime } from './ui.js';
+import { playSynthSound } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    renderAdminAccounts();
     renderRbacMatrix();
     setupEventListeners();
+    setupAdminModalListeners();
+
+    // Background sync from Supabase
+    if (typeof erp?.syncAdminAccountsFromSupabase === 'function') {
+        erp.syncAdminAccountsFromSupabase().then(() => renderAdminAccounts()).catch(() => {});
+    }
 });
 
 const ROLE_LABELS = {
     'SUPER_ADMIN': { title: 'Super Administrator', badge: 'ROOT', color: 'var(--brand-primary)' },
+    'SYSTEM_ADMIN': { title: 'System Administrator (Full Access)', badge: 'ADMIN', color: '#3b82f6' },
     'INSTITUTION_HEAD': { title: 'Institution Chancellor / Head', badge: 'EXECUTIVE', color: 'var(--brand-accent)' },
     'CAMPUS_HEAD': { title: 'Campus Head / Dean', badge: 'DEAN', color: 'var(--color-warning)' },
     'TEACHER': { title: 'Professor / Teacher', badge: 'FACULTY', color: 'var(--color-success)' },
@@ -29,23 +37,99 @@ const PERMISSION_COLUMNS = [
     { key: 'can_access_reports', label: 'Reports' }
 ];
 
+function renderAdminAccounts() {
+    const tbody = document.getElementById('admin-accounts-tbody');
+    if (!tbody) return;
+
+    const admins = erp.getAdminAccounts();
+    const campuses = erp.getCampuses();
+
+    tbody.innerHTML = admins.map(a => {
+        const isSuperAdmin = a.role === 'SUPER_ADMIN';
+        const roleLabel = isSuperAdmin ? 'Super Administrator' : (a.role === 'SYSTEM_ADMIN' ? 'System Administrator (Access All)' : a.role);
+        const campusName = a.campus_id === 'ALL' ? '🌐 Universal (All Campuses)' : (campuses.find(c => c.id === a.campus_id)?.name || a.campus_id);
+        const dateStr = a.created_at ? new Date(a.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : 'Permanent';
+
+        return `
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 0.65rem;">
+                        <div style="width: 34px; height: 34px; border-radius: 8px; background: ${isSuperAdmin ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)'}; color: ${isSuperAdmin ? '#d97706' : '#2563eb'}; display: flex; align-items: center; justify-content: center; font-weight: 800;">
+                            <i data-lucide="${isSuperAdmin ? 'crown' : 'shield-check'}" style="width: 17px; height: 17px;"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; color: var(--text-primary); font-size: 0.92rem;">${a.name}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${a.designation || 'Administrator'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">${a.email}</span>
+                </td>
+                <td>
+                    <span class="badge" style="background: ${isSuperAdmin ? 'rgba(245,158,11,0.15)' : 'rgba(59,130,246,0.15)'}; color: ${isSuperAdmin ? '#d97706' : '#2563eb'}; font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.6rem;">
+                        ${roleLabel}
+                    </span>
+                </td>
+                <td>
+                    <span style="font-size: 0.82rem; color: var(--text-secondary); font-weight: 600;">${campusName}</span>
+                </td>
+                <td>
+                    <span class="badge badge-success" style="font-size: 0.68rem; padding: 0.15rem 0.5rem;">ACTIVE</span>
+                </td>
+                <td>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">${dateStr}</span>
+                </td>
+                <td style="text-align: right;">
+                    ${isSuperAdmin ? `
+                        <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; padding: 0.3rem 0.6rem;">Root Superadmin</span>
+                    ` : `
+                        <button class="btn btn-outline btn-sm btn-delete-admin" data-id="${a.id}" data-name="${a.name}" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 0.75rem; padding: 0.3rem 0.65rem;">
+                            <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i> Delete
+                        </button>
+                    `}
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    tbody.querySelectorAll('.btn-delete-admin').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const name = btn.dataset.name;
+            window.app.confirm(`Are you sure you want to revoke and delete admin privileges for "${name}"?`, "Revoke Admin Authority", async () => {
+                try {
+                    await erp.deleteAdminAccount(id);
+                    window.app.toast(`Admin account "${name}" revoked and removed.`, "info", "Authority Revoked");
+                    renderAdminAccounts();
+                } catch (err) {
+                    window.app.toast(err.message, "error");
+                }
+            });
+        });
+    });
+
+    if (window.lucide) lucide.createIcons();
+}
+
 function renderRbacMatrix() {
     const permissions = erp.getPermissions();
     const tbody = document.getElementById('rbac-tbody');
+    if (!tbody) return;
 
     document.getElementById('kpi-total-roles').innerText = permissions.length;
 
     tbody.innerHTML = permissions.map(p => {
         const meta = ROLE_LABELS[p.role] || { title: p.role, badge: 'ROLE', color: 'var(--text-muted)' };
-        const isSuperAdmin = p.role === 'SUPER_ADMIN';
+        const isSuperAdmin = p.role === 'SUPER_ADMIN' || p.role === 'SYSTEM_ADMIN';
 
         const checkToggles = PERMISSION_COLUMNS.map(col => {
             const isChecked = isSuperAdmin ? true : !!p[col.key];
-            const disabledAttr = isSuperAdmin ? 'disabled' : '';
+            const disabledAttr = p.role === 'SUPER_ADMIN' ? 'disabled' : '';
 
             return `
                 <td style="text-align: center;">
-                    <label style="display: inline-flex; align-items: center; cursor: ${isSuperAdmin ? 'not-allowed' : 'pointer'};">
+                    <label style="display: inline-flex; align-items: center; cursor: ${p.role === 'SUPER_ADMIN' ? 'not-allowed' : 'pointer'};">
                         <input type="checkbox" class="rbac-toggle" data-role="${p.role}" data-key="${col.key}" ${isChecked ? 'checked' : ''} ${disabledAttr} style="width: 18px; height: 18px; accent-color: var(--brand-primary); cursor: pointer;">
                     </label>
                 </td>
@@ -75,24 +159,103 @@ function renderRbacMatrix() {
             const key = e.target.dataset.key;
             const value = e.target.checked;
             erp.updatePermission(role, key, value);
-            playAudioChime('TAP');
-            showToast(`Updated permission "${key}" for ${role}`, 'info');
+            playSynthSound('success');
+            window.app.toast(`Updated permission "${key}" for ${role}`, 'info');
         });
     });
 
     if (window.lucide) lucide.createIcons();
 }
 
+function setupAdminModalListeners() {
+    const modal = document.getElementById('modal-create-admin');
+    const openBtn = document.getElementById('btn-open-create-admin-modal');
+    const closeBtn = document.getElementById('btn-close-create-admin');
+    const cancelBtn = document.getElementById('btn-cancel-create-admin');
+    const form = document.getElementById('form-create-admin');
+    const campusSelect = document.getElementById('new-admin-campus');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    };
+
+    openBtn?.addEventListener('click', () => {
+        // Populate campus options
+        if (campusSelect) {
+            const campuses = erp.getCampuses();
+            let opts = `<option value="ALL">🌐 Universal Multi-Campus Authority (All Branches)</option>`;
+            campuses.forEach(c => {
+                opts += `<option value="${c.id}">${c.name} (${c.code || 'CAMPUS'})</option>`;
+            });
+            campusSelect.innerHTML = opts;
+        }
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('active'), 10);
+    });
+
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('new-admin-name').value.trim();
+        const email = document.getElementById('new-admin-email').value.trim();
+        const role = document.getElementById('new-admin-role').value;
+        const designation = document.getElementById('new-admin-designation').value.trim();
+        const campusId = document.getElementById('new-admin-campus').value;
+
+        if (!name || !email) {
+            window.app.toast("Please complete all required admin fields", "warning");
+            return;
+        }
+
+        const submitBtn = document.getElementById('btn-save-new-admin');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Authorizing...";
+        }
+
+        try {
+            await erp.createAdminAccount({
+                name,
+                email,
+                role,
+                designation,
+                campus_id: campusId,
+                status: 'ACTIVE'
+            });
+
+            playSynthSound('success');
+            window.app.toast(`Admin account for "${name}" authorized successfully with full access!`, 'success', 'Admin Created');
+            closeModal();
+            form.reset();
+            renderAdminAccounts();
+        } catch (err) {
+            window.app.toast(err.message || 'Failed to create admin', 'error');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i data-lucide="shield-plus" style="width: 15px;"></i> Create & Authorize Admin`;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+    });
+}
+
 function setupEventListeners() {
     document.getElementById('btn-save-rbac')?.addEventListener('click', () => {
-        playAudioChime('SUCCESS');
-        showToast('RBAC Security Matrix successfully applied and enforced!', 'success');
+        playSynthSound('success');
+        window.app.toast('RBAC Security Matrix successfully applied and enforced!', 'success');
     });
 
     document.getElementById('btn-reset-rbac')?.addEventListener('click', () => {
-        if (confirm('Reset RBAC matrix back to default institutional policy?')) {
+        window.app.confirm('Reset RBAC matrix back to default institutional policy?', 'Reset Security Policy', () => {
             localStorage.removeItem('erp_permissions');
             window.location.reload();
-        }
+        });
     });
 }

@@ -29,6 +29,7 @@ const STORAGE_KEYS = {
     INSTITUTION_PROFILE: 'erp_institution_profile',
     NFC_TAGS: 'erp_nfc_tags',
     ID_CARD_TEMPLATES: 'erp_id_card_templates',
+    ADMIN_ACCOUNTS: 'erp_admin_accounts',
     CURRENT_CAMPUS: 'erp_active_campus_id'
 };
 
@@ -721,6 +722,128 @@ export class ErpDataService {
         }
         localStorage.setItem(STORAGE_KEYS.PERMISSIONS, JSON.stringify(list));
         return roleObj;
+    }
+
+    // --- SYSTEM ADMIN & PRIVILEGED ACCOUNTS (UNDER SUPERADMIN) ---
+    getAdminAccounts() {
+        const defaultAdmins = [
+            {
+                id: 'admin-root',
+                name: 'Super Administrator',
+                email: 'admin@tgi.edu',
+                role: 'SUPER_ADMIN',
+                campus_id: 'ALL',
+                designation: 'Chief System Director & Superadmin',
+                status: 'ACTIVE',
+                can_access_all: true,
+                created_at: new Date('2026-01-01').toISOString()
+            }
+        ];
+        const stored = localStorage.getItem(STORAGE_KEYS.ADMIN_ACCOUNTS);
+        if (!stored) {
+            localStorage.setItem(STORAGE_KEYS.ADMIN_ACCOUNTS, JSON.stringify(defaultAdmins));
+            return defaultAdmins;
+        }
+        return JSON.parse(stored);
+    }
+
+    async createAdminAccount(admin) {
+        const list = this.getAdminAccounts();
+        admin.id = admin.id || `admin-${Date.now()}`;
+        admin.status = admin.status || 'ACTIVE';
+        admin.created_at = admin.created_at || new Date().toISOString();
+        admin.can_access_all = true;
+        admin.role = admin.role || 'SYSTEM_ADMIN';
+        admin.campus_id = admin.campus_id || 'ALL';
+
+        // Check if email already exists
+        const existingIdx = list.findIndex(a => a.email.toLowerCase() === admin.email.toLowerCase());
+        if (existingIdx !== -1) {
+            list[existingIdx] = { ...list[existingIdx], ...admin };
+        } else {
+            list.push(admin);
+        }
+
+        localStorage.setItem(STORAGE_KEYS.ADMIN_ACCOUNTS, JSON.stringify(list));
+        window.dispatchEvent(new CustomEvent('adminAccountsUpdated', { detail: list }));
+
+        // Register in staff directory for unified institutional presence
+        this.saveStaff({
+            id: `staff-${admin.id}`,
+            name: admin.name,
+            email: admin.email,
+            role: 'ADMIN',
+            campus_id: admin.campus_id,
+            designation: admin.designation || 'System Administrator',
+            employee_id: `ADM-${Math.floor(100 + Math.random() * 900)}`,
+            status: 'ACTIVE'
+        });
+
+        // Remote Supabase persistence
+        try {
+            await supabase.from('admin_accounts').upsert([{
+                id: admin.id,
+                name: admin.name,
+                email: admin.email,
+                role: admin.role,
+                campus_id: admin.campus_id,
+                designation: admin.designation || 'System Administrator',
+                status: admin.status,
+                created_at: admin.created_at
+            }], { onConflict: 'id' });
+        } catch (e) {
+            console.warn("Supabase admin account sync warning:", e);
+        }
+
+        return admin;
+    }
+
+    async deleteAdminAccount(id) {
+        let list = this.getAdminAccounts();
+        const target = list.find(a => a.id === id);
+        if (target && target.role === 'SUPER_ADMIN') {
+            throw new Error("Cannot delete primary Super Administrator account.");
+        }
+        list = list.filter(a => a.id !== id);
+        localStorage.setItem(STORAGE_KEYS.ADMIN_ACCOUNTS, JSON.stringify(list));
+        window.dispatchEvent(new CustomEvent('adminAccountsUpdated', { detail: list }));
+
+        try {
+            await supabase.from('admin_accounts').delete().eq('id', id);
+        } catch (e) {}
+    }
+
+    async syncAdminAccountsFromSupabase() {
+        try {
+            const { data, error } = await supabase
+                .from('admin_accounts')
+                .select('*');
+            if (data && !error && data.length > 0) {
+                const list = this.getAdminAccounts();
+                const map = new Map();
+                list.forEach(a => map.set(a.id, a));
+                data.forEach(remote => {
+                    map.set(remote.id, {
+                        id: remote.id,
+                        name: remote.name,
+                        email: remote.email,
+                        role: remote.role || 'SYSTEM_ADMIN',
+                        campus_id: remote.campus_id || 'ALL',
+                        designation: remote.designation,
+                        status: remote.status || 'ACTIVE',
+                        can_access_all: true,
+                        created_at: remote.created_at || new Date().toISOString()
+                    });
+                });
+                const merged = Array.from(map.values());
+                localStorage.setItem(STORAGE_KEYS.ADMIN_ACCOUNTS, JSON.stringify(merged));
+                window.dispatchEvent(new CustomEvent('adminAccountsUpdated', { detail: merged }));
+                return merged;
+            }
+        } catch (e) {
+            console.warn("Could not sync admin accounts from Supabase:", e);
+        }
+        return this.getAdminAccounts();
     }
 
     // --- AGGREGATED USAGE ANALYTICS ENGINE ---
